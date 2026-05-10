@@ -81,6 +81,12 @@ function buildTravelpayoutsLink({ origin, destination, departDate, returnDate })
   return url.toString();
 }
 
+function getDefaultDepartureMonth() {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString().slice(0, 7);
+}
+
 async function fetchTravelpayouts(payload) {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
   if (!token) {
@@ -101,9 +107,11 @@ async function fetchTravelpayouts(payload) {
   const url = new URL("https://api.travelpayouts.com/aviasales/v3/prices_for_dates");
   url.searchParams.set("origin", origin);
   url.searchParams.set("destination", destination);
+  url.searchParams.set("departure_at", payload.departureAt || getDefaultDepartureMonth());
   url.searchParams.set("currency", "ils");
   url.searchParams.set("sorting", "price");
   url.searchParams.set("direct", "false");
+  url.searchParams.set("one_way", "true");
   url.searchParams.set("limit", "10");
 
   const response = await fetch(url, {
