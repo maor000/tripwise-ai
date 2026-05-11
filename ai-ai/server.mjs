@@ -3,8 +3,11 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
+const require = createRequire(import.meta.url);
+require.extensions[".ts"] = require.extensions[".js"];
 await loadEnvFile();
 
 const port = Number(process.env.PORT || 4173);
@@ -202,6 +205,20 @@ async function serveStatic(request, response, pathname) {
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url || "/", `http://${request.headers.host}`);
+
+    const apiRoutes = {
+      "/api/search/packages": "./api/search/packages.js",
+      "/api/search/flights": "./api/search/flights.js",
+      "/api/search/hotels": "./api/search/hotels.js",
+      "/api/providers/status": "./api/providers/status.js",
+      "/api/packages/search": "./api/packages/search.js"
+    };
+
+    if (apiRoutes[url.pathname]) {
+      const handler = require(apiRoutes[url.pathname]);
+      await handler(request, response);
+      return;
+    }
 
     if (request.method === "POST" && url.pathname === "/api/packages/search") {
       const payload = await readJsonBody(request);
