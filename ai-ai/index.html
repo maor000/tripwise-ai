@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TripWise AI | סוכן חופשות חכם</title>
+    <meta name="description" content="סוכן AI למציאת טיסות וחבילות מספקים מחוברים בלבד." />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>TripWise AI</strong>
+      <nav>
+        <a href="#search">חיפוש</a>
+        <a href="#deals">חבילות</a>
+        <a href="#status">חיבור ספקים</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="search">
+        <div class="hero-copy">
+          <p class="eyebrow">סוכן נסיעות AI</p>
+          <h1>תן יעד, תקציב ומספר נוסעים. הסוכן יחפש נתוני ספקים אמיתיים בלבד.</h1>
+          <p>המערכת לא ממציאה מחירים. אם חסר מלון, מזוודה, ארוחות או תנאי החזר, זה יסומן בצורה ברורה.</p>
+        </div>
+        <form id="tripForm" class="panel">
+          <label>יעד<input id="destination" placeholder="רומא, כרתים, דובאי" /></label>
+          <label>תקציב<select id="budget"><option value="3500">עד 3,500 ₪</option><option value="5000" selected>עד 5,000 ₪</option><option value="7500">עד 7,500 ₪</option></select></label>
+          <label>נוסעים<select id="travelers"><option value="couple">2 מבוגרים</option><option value="family">משפחה</option><option value="friends">חברים</option></select></label>
+          <label>סגנון<select id="style"><option value="cheap">הכי משתלם</option><option value="comfort">נוחות</option><option value="luxury">יוקרתי</option></select></label>
+          <button type="submit">מצא חבילות</button>
+        </form>
+      </section>
+
+      <section class="status" id="status">
+        <h2>סטטוס ספקים</h2>
+        <p id="providerStatus">בודק חיבור...</p>
+      </section>
+
+      <section id="deals">
+        <h2>תוצאות מספקים</h2>
+        <div id="dealGrid" class="grid"></div>
+      </section>
+    </main>
+
+    <aside class="agent"><strong>TripWise Agent</strong><span id="agentStatus">מוכן לבדיקה</span></aside>
+    <script src="app.js"></script>
+  </body>
+</html>
