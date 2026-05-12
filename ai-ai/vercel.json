@@ -1,1 +1,1 @@
-{"version":2,"functions":{"api/**/*.js":{"runtime":"nodejs24.x"}},"headers":[{"source":"/(.*)","headers":[{"key":"X-Content-Type-Options","value":"nosniff"}]}]}
+{"version":2,"headers":[{"source":"/(.*)","headers":[{"key":"X-Content-Type-Options","value":"nosniff"}]}]}
