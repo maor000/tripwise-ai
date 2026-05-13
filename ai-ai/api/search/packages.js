@@ -38,26 +38,26 @@ function readBody(req) {
 
 function airportCode(value, fallback) {
   const key = String(value || '').trim().toLowerCase();
-  return DESTINATIONS[key] || (key ? key.slice(0, 3).toUpperCase() : fallback);
+  if (/^[a-z]{3}$/i.test(key)) return key.toUpperCase();
+  return DESTINATIONS[key] || fallback;
 }
 
-function buildPackage(row, index, request, marker) {
-  const destination = request.destination || row.destination || 'יעד מהספק';
+function buildPackage(row, index, request, marker, origin, destination) {
   const supplierUrl = row.link
     ? `https://www.aviasales.com${row.link}${row.link.includes('?') ? '&' : '?'}marker=${encodeURIComponent(marker)}`
     : 'https://www.aviasales.com';
 
   return {
     id: `tp-package-${index}-${row.value || row.price || Date.now()}`,
-    destination,
+    destination: request.destination || destination,
     dates: {
       departureAt: row.departure_at || null,
       returnAt: row.return_at || null,
     },
     hotel: null,
     flight: {
-      origin: row.origin || airportCode(request.origin, process.env.TRAVELPAYOUTS_DEFAULT_ORIGIN || 'TLV'),
-      destination: row.destination || airportCode(request.destination, 'ROM'),
+      origin,
+      destination,
       airline: row.airline || null,
       departureAt: row.departure_at || null,
       returnAt: row.return_at || null,
@@ -113,21 +113,52 @@ module.exports = async function handler(req, res) {
     url.searchParams.set('destination', destination);
     url.searchParams.set('departure_at', month);
     url.searchParams.set('currency', String(request.currency || 'ils').toLowerCase());
+    url.searchParams.set('market', 'il');
+    url.searchParams.set('locale', 'he');
     url.searchParams.set('sorting', 'price');
     url.searchParams.set('limit', '10');
     url.searchParams.set('token', token);
 
     const response = await fetch(url, {
+      headers: { 'X-Access-Token': token },
       signal: AbortSignal.timeout(Number(process.env.PROVIDER_TIMEOUT_MS || 9000)),
     });
-    const providerData = await response.json();
+
+    const text = await response.text();
+    let providerData = {};
+    try {
+      providerData = text ? JSON.parse(text) : {};
+    } catch (error) {
+      return send(res, 200, {
+        state: 'provider_error',
+        packages: [],
+        providers: [{ name: 'Travelpayouts', configured: true, status: 'provider_error', error: 'Provider did not return JSON', providerMessage: text.slice(0, 400) }],
+        message: 'Provider returned a non-JSON response. No fake packages were created.',
+      });
+    }
+
+    if (!response.ok || providerData.success === false) {
+      return send(res, 200, {
+        state: 'provider_error',
+        packages: [],
+        providers: [{
+          name: 'Travelpayouts',
+          configured: true,
+          status: 'provider_error',
+          error: providerData.error || `Travelpayouts returned ${response.status}`,
+          providerMessage: providerData.error || text.slice(0, 400),
+        }],
+        message: 'Provider returned an error. No fake packages were created.',
+      });
+    }
+
     const rows = Array.isArray(providerData.data) ? providerData.data : [];
-    const packages = rows.map((row, index) => buildPackage(row, index, request, marker));
+    const packages = rows.map((row, index) => buildPackage(row, index, request, marker, origin, destination));
 
     return send(res, 200, {
       state: packages.length ? 'available' : 'no_results',
       packages,
-      providers: [{ name: 'Travelpayouts', configured: true, status: response.ok ? 'available' : 'provider_error' }],
+      providers: [{ name: 'Travelpayouts', configured: true, status: packages.length ? 'available' : 'no_results' }],
       ai: {
         openai: { configured: Boolean(process.env.OPENAI_API_KEY), used: false, error: null },
         explanation: 'AI will rank provider data only. It will not invent missing hotel, baggage, meal, refund or availability data.',
