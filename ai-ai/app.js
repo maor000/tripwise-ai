@@ -74,7 +74,23 @@ function normalizeProviderResult(item) {
   };
 }
 
-function render(items = []) {
+function providerErrorText(data) {
+  const provider = (data.providers || []).find((item) => item.status === 'provider_error');
+  if (!provider) return '';
+  const detail = provider.providerMessage || provider.error || data.message || '';
+  return detail
+    ? `Travelpayouts מחובר, אבל החזיר שגיאה: ${detail}`
+    : 'Travelpayouts מחובר, אבל החזיר שגיאה בזמן החיפוש. ייתכן שהטוקן אינו Data API מתאים או שאין הרשאה למסלול הזה.';
+}
+
+function render(items = [], data = {}) {
+  const providerProblem = providerErrorText(data);
+
+  if (providerProblem) {
+    empty('שגיאת ספק', `${providerProblem}. אין באתר מחירי דמו ולא נוצרו חבילות מזויפות.`, true);
+    return;
+  }
+
   if (!items.length) {
     empty(
       'לא נמצאו תוצאות אמיתיות',
@@ -145,7 +161,7 @@ form.addEventListener('submit', async (event) => {
     }
 
     const results = data.packages || data.results || data.flights || [];
-    render(results);
+    render(results, data);
     agentStatus.textContent = results.length ? 'נמצאו תוצאות ספק אמיתיות' : 'אין תוצאות ספק לבקשה הזו';
   } catch (error) {
     empty('שגיאת ספק', error.message, true);
