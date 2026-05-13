@@ -1,1 +1,144 @@
-const DEST={rome:'ROM','רומא':'ROM',crete:'HER','כרתים':'HER',dubai:'DXB','דובאי':'DXB',paris:'PAR','פריז':'PAR',london:'LON','לונדון':'LON',athens:'ATH','אתונה':'ATH'};function read(req){return new Promise((ok,bad)=>{let b='';req.on('data',c=>b+=c);req.on('end',()=>{try{ok(b?JSON.parse(b):{})}catch(e){bad(e)}})})}function code(v=''){const s=String(v).trim().toLowerCase();return DEST[s]||s.slice(0,3).toUpperCase()}function missing(pkg){const out=[];if(!pkg.hotel)out.push('hotel');if(!pkg.flight)out.push('flight');if(pkg.baggage?.included==null)out.push('baggage');if(pkg.meals?.breakfastIncluded==null)out.push('meals');if(pkg.refundable==null)out.push('refundable_terms');return out}async function openai(packages,body){if(!process.env.OPENAI_API_KEY||!packages.length)return{used:false,explanation:process.env.OPENAI_API_KEY?'No provider results':'OPENAI_API_KEY is not configured yet.',items:{}};try{const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${process.env.OPENAI_API_KEY}`},body:JSON.stringify({model:process.env.OPENAI_MODEL||'gpt-5',input:[{role:'system',content:'Rank these travel packages in Hebrew. Use only given data. Do not invent hotels, prices, flights, meals, baggage, refund terms or availability. Return JSON only: {"explanation":"...","items":[{"id":"...","confidenceScore":80,"aiSummary":"...","missing_data":true,"missingFields":[]}]}.'},{role:'user',content:JSON.stringify({request:body,packages})}],text:{format:{type:'json_object'}}})});if(!r.ok)return{used:false,error:`OpenAI ${r.status}`,items:{}};const data=await r.json();const text=data.output_text||(data.output||[]).flatMap(o=>o.content||[]).map(c=>c.text||'').join('\n');const parsed=JSON.parse(text);const items={};for(const item of parsed.items||[])items[item.id]=item;return{used:true,explanation:parsed.explanation,items}}catch(e){return{used:false,error:e.message,items:{}}}}module.exports=async function handler(req,res){res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');if(req.method!=='POST'){res.statusCode=405;return res.end(JSON.stringify({error:'Method not allowed'}))}const token=process.env.TRAVELPAYOUTS_TOKEN;const marker=process.env.TRAVELPAYOUTS_MARKER;if(!token||!marker){res.statusCode=200;return res.end(JSON.stringify({state:'unavailable',packages:[],providers:[{name:'Travelpayouts',configured:false,status:'unavailable'}],message:'Provider API is not configured yet.'}))}try{const body=await read(req);const origin=code(body.origin||process.env.TRAVELPAYOUTS_DEFAULT_ORIGIN||'TLV');const destination=code(body.destination||'ROM');const month=new Date(Date.now()+1000*60*60*24*30).toISOString().slice(0,7);const url=new URL('https://api.travelpayouts.com/aviasales/v3/prices_for_dates');url.searchParams.set('origin',origin);url.searchParams.set('destination',destination);url.searchParams.set('departure_at',month);url.searchParams.set('currency',String(body.currency||'ils').toLowerCase());url.searchParams.set('sorting','price');url.searchParams.set('limit','10');url.searchParams.set('token',token);const r=await fetch(url,{signal:AbortSignal.timeout(Number(process.env.PROVIDER_TIMEOUT_MS||9000))});const data=await r.json();const rows=Array.isArray(data.data)?data.data:[];let packages=rows.map((x,i)=>{const supplierUrl=x.link?`https://www.aviasales.com${x.link}&marker=${encodeURIComponent(marker)}`:process.env.TRAVELPAYOUTS_AFFILIATE_BASE_URL;const pkg={id:`tp-package-${i}-${x.value||x.price}`,destination:body.destination||destination,dates:{departureAt:x.departure_at,returnAt:x.return_at},hotel:null,flight:{origin,destination,airline:x.airline,departureAt:x.departure_at,returnAt:x.return_at},baggage:{included:null},meals:{breakfastIncluded:null},price:Number(x.value||x.price||0),currency:String(body.currency||'ILS').toUpperCase(),refundable:null,cancellationPolicy:{summary:'תנאי ביטול והחזר נקבעים אצל הספק לפני ההזמנה.'},supplierName:'Travelpayouts / Aviasales',supplierUrl,lastCheckedAt:new Date().toISOString(),availabilityStatus:'pending_verification',verificationStatus:'verified',confidenceScore:70,source:'provider',verified:true,aiComposed:false};pkg.missingFields=missing(pkg);pkg.missing_data=pkg.missingFields.length>0;pkg.aiSummary='תוצאה אמיתית מספק טיסות. מלון/ארוחות/מזוודה/החזר יסומנו כחסרים אם הספק לא החזיר אותם.';return pkg});const ai=await openai(packages,body);packages=packages.map(p=>{const a=ai.items[p.id];return a?{...p,confidenceScore:Number(a.confidenceScore)||p.confidenceScore,aiSummary:a.aiSummary||p.aiSummary,missing_data:p.missing_data||a.missing_data===true,missingFields:[...new Set([...(p.missingFields||[]),...(a.missingFields||[])])],aiRankedByOpenAI:ai.used}:p}).sort((a,b)=>b.confidenceScore-a.confidenceScore);res.end(JSON.stringify({state:packages.length?'available':'no_results',packages,providers:[{name:'Travelpayouts',configured:true,status:r.ok?'available':'provider_error'}],ai:{openai:{configured:Boolean(process.env.OPENAI_API_KEY),used:ai.used,error:ai.error||null},explanation:ai.explanation||'AI ranks provider data only.'}}))}catch(e){res.statusCode=200;res.end(JSON.stringify({state:e.name==='TimeoutError'?'provider_timeout':'provider_error',packages:[],providers:[{name:'Travelpayouts',configured:true,status:'provider_error',error:e.message}]}))}}
+const DESTINATIONS = {
+  rome: 'ROM',
+  'רומא': 'ROM',
+  crete: 'HER',
+  'כרתים': 'HER',
+  dubai: 'DXB',
+  'דובאי': 'DXB',
+  paris: 'PAR',
+  'פריז': 'PAR',
+  london: 'LON',
+  'לונדון': 'LON',
+  athens: 'ATH',
+  'אתונה': 'ATH',
+};
+
+function send(res, statusCode, payload) {
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify(payload));
+}
+
+function readBody(req) {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (error) {
+        resolve({});
+      }
+    });
+  });
+}
+
+function airportCode(value, fallback) {
+  const key = String(value || '').trim().toLowerCase();
+  return DESTINATIONS[key] || (key ? key.slice(0, 3).toUpperCase() : fallback);
+}
+
+function buildPackage(row, index, request, marker) {
+  const destination = request.destination || row.destination || 'יעד מהספק';
+  const supplierUrl = row.link
+    ? `https://www.aviasales.com${row.link}${row.link.includes('?') ? '&' : '?'}marker=${encodeURIComponent(marker)}`
+    : 'https://www.aviasales.com';
+
+  return {
+    id: `tp-package-${index}-${row.value || row.price || Date.now()}`,
+    destination,
+    dates: {
+      departureAt: row.departure_at || null,
+      returnAt: row.return_at || null,
+    },
+    hotel: null,
+    flight: {
+      origin: row.origin || airportCode(request.origin, process.env.TRAVELPAYOUTS_DEFAULT_ORIGIN || 'TLV'),
+      destination: row.destination || airportCode(request.destination, 'ROM'),
+      airline: row.airline || null,
+      departureAt: row.departure_at || null,
+      returnAt: row.return_at || null,
+    },
+    baggage: { included: null },
+    meals: { breakfastIncluded: null },
+    price: Number(row.value || row.price || 0),
+    currency: String(request.currency || 'ILS').toUpperCase(),
+    refundable: null,
+    cancellationPolicy: {
+      summary: 'תנאי ביטול והחזר נקבעים אצל הספק לפני ההזמנה.',
+    },
+    supplierName: 'Travelpayouts / Aviasales',
+    supplierUrl,
+    lastCheckedAt: new Date().toISOString(),
+    availabilityStatus: 'pending_verification',
+    verificationStatus: 'verified',
+    confidenceScore: 70,
+    source: 'provider',
+    verified: true,
+    aiComposed: false,
+    missing_data: true,
+    missingFields: ['hotel', 'baggage', 'meals', 'refundable_terms'],
+    aiSummary: 'תוצאה אמיתית מספק טיסות. מלון, ארוחות, מזוודה ותנאי החזר לא נמסרו ולכן מסומנים כחסרים.',
+  };
+}
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return send(res, 405, { error: 'Method not allowed' });
+  }
+
+  const token = process.env.TRAVELPAYOUTS_TOKEN;
+  const marker = process.env.TRAVELPAYOUTS_MARKER || '';
+
+  if (!token) {
+    return send(res, 200, {
+      state: 'unavailable',
+      packages: [],
+      providers: [{ name: 'Travelpayouts', configured: false, status: 'unavailable' }],
+      message: 'Provider API is not configured yet.',
+    });
+  }
+
+  try {
+    const request = await readBody(req);
+    const origin = airportCode(request.origin, process.env.TRAVELPAYOUTS_DEFAULT_ORIGIN || 'TLV');
+    const destination = airportCode(request.destination, 'ROM');
+    const month = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 7);
+    const url = new URL('https://api.travelpayouts.com/aviasales/v3/prices_for_dates');
+
+    url.searchParams.set('origin', origin);
+    url.searchParams.set('destination', destination);
+    url.searchParams.set('departure_at', month);
+    url.searchParams.set('currency', String(request.currency || 'ils').toLowerCase());
+    url.searchParams.set('sorting', 'price');
+    url.searchParams.set('limit', '10');
+    url.searchParams.set('token', token);
+
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(Number(process.env.PROVIDER_TIMEOUT_MS || 9000)),
+    });
+    const providerData = await response.json();
+    const rows = Array.isArray(providerData.data) ? providerData.data : [];
+    const packages = rows.map((row, index) => buildPackage(row, index, request, marker));
+
+    return send(res, 200, {
+      state: packages.length ? 'available' : 'no_results',
+      packages,
+      providers: [{ name: 'Travelpayouts', configured: true, status: response.ok ? 'available' : 'provider_error' }],
+      ai: {
+        openai: { configured: Boolean(process.env.OPENAI_API_KEY), used: false, error: null },
+        explanation: 'AI will rank provider data only. It will not invent missing hotel, baggage, meal, refund or availability data.',
+      },
+    });
+  } catch (error) {
+    return send(res, 200, {
+      state: error.name === 'TimeoutError' ? 'provider_timeout' : 'provider_error',
+      packages: [],
+      providers: [{ name: 'Travelpayouts', configured: true, status: 'provider_error', error: error.message }],
+      message: 'Provider returned an error. No fake packages were created.',
+    });
+  }
+};
