@@ -4,16 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TripWise AI | סוכן חופשות חכם</title>
-    <meta name="description" content="סוכן AI למציאת טיסות וחבילות מספקים מחוברים בלבד." />
-    <link rel="stylesheet" href="styles.css" />
+    <meta name="description" content="סוכן AI למציאת טיסות וחבילות מספקים מחוברים בלבד, עם בדיקת כדאיות, שקיפות ספקים ותנאי ביטול." />
+    <link rel="stylesheet" href="styles.css?v=20260513" />
   </head>
   <body>
     <header class="topbar">
       <strong>TripWise AI</strong>
       <nav>
         <a href="#search">חיפוש</a>
-        <a href="#deals">חבילות</a>
-        <a href="#status">חיבור ספקים</a>
+        <a href="#how">איך זה עובד</a>
+        <a href="#compare">בדיקת כדאיות</a>
+        <a href="#deals">תוצאות</a>
+        <a href="#status">ספקים</a>
       </nav>
     </header>
 
@@ -22,7 +24,7 @@
         <div class="hero-copy">
           <p class="eyebrow">סוכן נסיעות AI</p>
           <h1>תן יעד, תקציב ומספר נוסעים. הסוכן יחפש נתוני ספקים אמיתיים בלבד.</h1>
-          <p>המערכת לא ממציאה מחירים. אם חסר מלון, מזוודה, ארוחות או תנאי החזר, זה יסומן בצורה ברורה.</p>
+          <p>אין מחירי דמו ואין המצאות. אם חסר מלון, מזוודה, ארוחות או תנאי החזר, זה יסומן בבירור.</p>
         </div>
         <form id="tripForm" class="panel">
           <label>יעד<input id="destination" placeholder="רומא, כרתים, דובאי" /></label>
@@ -31,6 +33,31 @@
           <label>סגנון<select id="style"><option value="cheap">הכי משתלם</option><option value="comfort">נוחות</option><option value="luxury">יוקרתי</option></select></label>
           <button type="submit">מצא חבילות</button>
         </form>
+      </section>
+
+      <section class="explain" id="how">
+        <div class="section-title">
+          <p class="eyebrow">שקיפות מלאה</p>
+          <h2>איך ההזמנה עובדת</h2>
+        </div>
+        <div class="info-grid">
+          <article><span>1</span><h3>המשתמש מבקש חופשה</h3><p>אפשר לרשום יעד, תקציב וסגנון, או לבקש רעיונות בהמשך.</p></article>
+          <article><span>2</span><h3>האתר פונה לספקים</h3><p>החיפוש רץ דרך API או קישור שותפים מורשה. המפתח נשאר בשרת ולא בדפדפן.</p></article>
+          <article><span>3</span><h3>המערכת מסמנת מה אמיתי</h3><p>כל תוצאה מקבלת מקור, ספק, זמן בדיקה, סטטוס אימות ומה חסר.</p></article>
+          <article><span>4</span><h3>הלקוח עובר לספק</h3><p>התשלום, האישור ותנאי הביטול הסופיים נקבעים אצל הספק שממנו מגיעה ההצעה.</p></article>
+        </div>
+      </section>
+
+      <section class="compare" id="compare">
+        <div>
+          <p class="eyebrow">בדיקת כדאיות</p>
+          <h2>מה זה אומר בדיקת כדאיות?</h2>
+          <p>זו בדיקה שלא מסתכלת רק על המחיר. הסוכן משווה מחיר, שעות טיסה, מיקום, ארוחות, מזוודה, ביטול, אמינות הספק ונוחות ללקוח.</p>
+        </div>
+        <div class="policy-box">
+          <h3>ביטולים והחזרים</h3>
+          <p>האתר מציג את תנאי הספק בלבד. אם יש מלחמה, ביטול טיסה או בעיה במלון, ההחזר תלוי בספק/חברת התעופה/ביטוח. עמלת שירות יכולה להיות לא מזוכה אם היא מוצגת מראש.</p>
+        </div>
       </section>
 
       <section class="status" id="status">
@@ -45,6 +72,6 @@
     </main>
 
     <aside class="agent"><strong>TripWise Agent</strong><span id="agentStatus">מוכן לבדיקה</span></aside>
-    <script src="app.js"></script>
+    <script src="app.js?v=20260513"></script>
   </body>
 </html>
