@@ -25,6 +25,10 @@ function send(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function envValue(name, fallback = '') {
+  return String(process.env[name] || fallback).trim();
+}
+
 function readBody(req) {
   return new Promise((resolve) => {
     let body = '';
@@ -53,11 +57,14 @@ function airportCode(value, fallback) {
   return 'TLV';
 }
 
-function buildPackage(row, index, request, marker, origin, destination) {
-  const supplierUrl = row.link
-    ? `https://www.aviasales.com${row.link}${row.link.includes('?') ? '&' : '?'}marker=${encodeURIComponent(marker)}`
-    : 'https://www.aviasales.com';
+function withMarker(link, marker) {
+  if (!link) return 'https://www.aviasales.com';
+  const baseUrl = `https://www.aviasales.com${link}`;
+  if (!marker) return baseUrl;
+  return `${baseUrl}${link.includes('?') ? '&' : '?'}marker=${encodeURIComponent(marker)}`;
+}
 
+function buildPackage(row, index, request, marker, origin, destination) {
   return {
     id: `tp-package-${index}-${row.value || row.price || Date.now()}`,
     destination: request.destination || destination,
@@ -82,7 +89,7 @@ function buildPackage(row, index, request, marker, origin, destination) {
       summary: 'תנאי ביטול והחזר נקבעים אצל הספק לפני ההזמנה.',
     },
     supplierName: 'Travelpayouts / Aviasales',
-    supplierUrl,
+    supplierUrl: withMarker(row.link, marker),
     lastCheckedAt: new Date().toISOString(),
     availabilityStatus: 'pending_verification',
     verificationStatus: 'verified',
@@ -101,8 +108,8 @@ module.exports = async function handler(req, res) {
     return send(res, 405, { error: 'Method not allowed' });
   }
 
-  const token = process.env.TRAVELPAYOUTS_TOKEN;
-  const marker = process.env.TRAVELPAYOUTS_MARKER || '';
+  const token = envValue('TRAVELPAYOUTS_TOKEN');
+  const marker = envValue('TRAVELPAYOUTS_MARKER');
 
   if (!token) {
     return send(res, 200, {
@@ -115,7 +122,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const request = await readBody(req);
-    const origin = airportCode(request.origin, process.env.TRAVELPAYOUTS_DEFAULT_ORIGIN || 'TLV');
+    const origin = airportCode(request.origin, envValue('TRAVELPAYOUTS_DEFAULT_ORIGIN', 'TLV'));
     const destination = airportCode(request.destination, 'ROM');
     const month = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 7);
     const url = new URL('https://api.travelpayouts.com/aviasales/v3/prices_for_dates');
@@ -171,7 +178,7 @@ module.exports = async function handler(req, res) {
       packages,
       providers: [{ name: 'Travelpayouts', configured: true, status: packages.length ? 'available' : 'no_results' }],
       ai: {
-        openai: { configured: Boolean(process.env.OPENAI_API_KEY), used: false, error: null },
+        openai: { configured: Boolean(envValue('OPENAI_API_KEY')), used: false, error: null },
         explanation: 'AI will rank provider data only. It will not invent missing hotel, baggage, meal, refund or availability data.',
       },
     });
