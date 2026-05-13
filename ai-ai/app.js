@@ -3,6 +3,14 @@ const dealGrid = document.querySelector('#dealGrid');
 const providerStatus = document.querySelector('#providerStatus');
 const agentStatus = document.querySelector('#agentStatus');
 
+const LABELS = {
+  travelInsurance: 'ביטוח נסיעות רפואי',
+  lifeInsurance: 'הרחבת חיים/תאונות אישיות',
+  baggageInsurance: 'כיסוי כבודה',
+  cancelInsurance: 'ביטול נסיעה/מצב חירום',
+  flexibleOnly: 'העדפת חבילות שניתן לבטל',
+};
+
 function esc(value = '') {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -21,12 +29,25 @@ function money(value, currency = 'ILS') {
     : 'מחיר מהספק';
 }
 
+function checked(id) {
+  return Boolean(document.querySelector(`#${id}`)?.checked);
+}
+
 function payload() {
   return {
     destination: document.querySelector('#destination').value.trim(),
     budget: Number(document.querySelector('#budget').value),
     travelers: document.querySelector('#travelers').value,
     style: document.querySelector('#style').value,
+    priority: document.querySelector('#priority').value,
+    notes: document.querySelector('#notes').value.trim(),
+    insurance: {
+      travel: checked('travelInsurance'),
+      life: checked('lifeInsurance'),
+      baggage: checked('baggageInsurance'),
+      cancellation: checked('cancelInsurance'),
+      flexibleOnly: checked('flexibleOnly'),
+    },
     currency: 'ILS',
     locale: 'he-IL',
   };
@@ -41,14 +62,35 @@ async function readJsonSafely(response) {
   const text = await response.text();
 
   if (!contentType.includes('application/json')) {
-    throw new Error('השרת החזיר דף שגיאה במקום JSON. זה אומר שהמסלול של הספק לא נמצא או שהפריסה עדיין לא התעדכנה.');
+    throw new Error('השרת החזיר דף שגיאה במקום נתוני ספק. פתח את הכתובת הראשית המעודכנת של האתר או רענן חזק עם Ctrl+F5.');
   }
 
   try {
     return text ? JSON.parse(text) : {};
   } catch (error) {
-    throw new Error('התקבלה תשובה לא תקינה מהספק. נסה שוב בעוד רגע.');
+    throw new Error('התקבלה תשובה לא תקינה מהשרת. אין שימוש במחירי דמו, נסה שוב בעוד רגע.');
   }
+}
+
+function selectedInsurance(data = payload()) {
+  const selected = [];
+  if (data.insurance?.travel) selected.push(LABELS.travelInsurance);
+  if (data.insurance?.life) selected.push(LABELS.lifeInsurance);
+  if (data.insurance?.baggage) selected.push(LABELS.baggageInsurance);
+  if (data.insurance?.cancellation) selected.push(LABELS.cancelInsurance);
+  if (data.insurance?.flexibleOnly) selected.push(LABELS.flexibleOnly);
+  return selected;
+}
+
+function worthinessText(item, request) {
+  const parts = [];
+  if (request.priority === 'cheap') parts.push('הדירוג נותן עדיפות למחיר נמוך.');
+  if (request.priority === 'comfort') parts.push('הדירוג נותן עדיפות לנוחות, שעות טיסה ופחות חוסר ודאות.');
+  if (request.priority === 'flexible') parts.push('הדירוג נותן עדיפות לתנאי ביטול והחזר ברורים.');
+  if (request.priority === 'premium') parts.push('הדירוג נותן עדיפות לאיכות ולרמת שירות.');
+  if (item.missing_data) parts.push('יש מידע חסר ולכן החבילה לא מסומנת כחבילה מלאה.');
+  if (Number(item.price) && Number(request.budget) && Number(item.price) <= Number(request.budget)) parts.push('המחיר עומד בתקציב שבחרת.');
+  return parts.join(' ');
 }
 
 function normalizeProviderResult(item) {
@@ -66,11 +108,11 @@ function normalizeProviderResult(item) {
     verificationStatus: item.verificationStatus || (item.verified ? 'verified' : 'pending_verification'),
     source: item.source || 'provider',
     supplierName: item.supplierName || 'Travelpayouts / Aviasales',
-    missing_data: true,
-    missingFields: item.missingFields || ['hotel', 'baggage', 'meals', 'refundable_terms'],
+    missing_data: item.missing_data ?? true,
+    missingFields: item.missingFields || ['hotel', 'baggage', 'meals', 'refundable_terms', 'insurance_price'],
     aiSummary:
       item.aiSummary ||
-      'תוצאה אמיתית מספק טיסות. מלון, ארוחות, מזוודה ותנאי החזר לא נמסרו ולכן מסומנים כחסרים.',
+      'תוצאה אמיתית מספק טיסות. מלון, ארוחות, מזוודה, ביטוח ותנאי החזר לא נמסרו ולכן מסומנים כחסרים.',
   };
 }
 
@@ -80,10 +122,10 @@ function providerErrorText(data) {
   const detail = provider.providerMessage || provider.error || data.message || '';
   return detail
     ? `Travelpayouts מחובר, אבל החזיר שגיאה: ${detail}`
-    : 'Travelpayouts מחובר, אבל החזיר שגיאה בזמן החיפוש. ייתכן שהטוקן אינו Data API מתאים או שאין הרשאה למסלול הזה.';
+    : 'Travelpayouts מחובר, אבל החזיר שגיאה בזמן החיפוש. ייתכן שהטוקן אינו מתאים למסלול הזה או שאין הרשאה לנתונים האלה.';
 }
 
-function render(items = [], data = {}) {
+function render(items = [], data = {}, request = payload()) {
   const providerProblem = providerErrorText(data);
 
   if (providerProblem) {
@@ -94,15 +136,18 @@ function render(items = [], data = {}) {
   if (!items.length) {
     empty(
       'לא נמצאו תוצאות אמיתיות',
-      'הספק מחובר, אבל לא החזיר תוצאות לבקשה הזו. נסה יעד אחר או תקציב אחר. אין באתר מחירי דמו.'
+      'הספק מחובר, אבל לא החזיר תוצאות לבקשה הזו. נסה יעד אחר, תקציב אחר או תאריך אחר. אין באתר מחירי דמו.'
     );
     return;
   }
 
+  const insuranceNeeds = selectedInsurance(request);
+
   dealGrid.innerHTML = items
     .map(normalizeProviderResult)
-    .map(
-      (item) => `<article class="card">
+    .map((item) => {
+      const worthiness = worthinessText(item, request);
+      return `<article class="card">
         <div class="badges">
           <span class="badge good">${esc(item.verificationStatus)}</span>
           <span class="badge">${esc(item.source)}</span>
@@ -118,12 +163,15 @@ function render(items = [], data = {}) {
           <span>מזוודה: ${item.baggage?.included === true ? 'כלולה' : 'לא נמסר מהספק'}</span>
           <span>ארוחת בוקר: ${item.meals?.breakfastIncluded === true ? 'כלולה' : 'לא נמסר מהספק'}</span>
           <span>ביטול/החזר: ${esc(item.cancellationPolicy?.summary || 'לפי תנאי הספק')}</span>
+          <span>ביטוח לבדיקה: ${insuranceNeeds.length ? esc(insuranceNeeds.join(', ')) : 'לא נבחר ביטוח'}</span>
+          <span>מחיר ביטוח: צריך חיבור ספק ביטוח כדי להציג מחיר אמיתי.</span>
+          ${worthiness ? `<span>כדאיות: ${esc(worthiness)}</span>` : ''}
           ${item.missing_data ? `<span>חסר מידע: ${esc((item.missingFields || []).join(', '))}</span>` : ''}
         </div>
         <strong class="price">${money(item.price, item.currency)}</strong>
         ${item.supplierUrl ? `<br><a class="booking" href="${esc(item.supplierUrl)}" target="_blank" rel="noopener">פתח הזמנה אצל הספק</a>` : ''}
-      </article>`
-    )
+      </article>`;
+    })
     .join('');
 }
 
@@ -144,13 +192,14 @@ async function loadStatus() {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  const request = payload();
   empty('בודק ספקים...', 'פונה לשרת בלבד. מפתחות API לא נחשפים בדפדפן.');
 
   try {
     const response = await fetch('/api/search/packages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload()),
+      body: JSON.stringify(request),
       cache: 'no-store',
     });
 
@@ -161,15 +210,15 @@ form.addEventListener('submit', async (event) => {
     }
 
     const results = data.packages || data.results || data.flights || [];
-    render(results, data);
+    render(results, data, request);
     agentStatus.textContent = results.length ? 'נמצאו תוצאות ספק אמיתיות' : 'אין תוצאות ספק לבקשה הזו';
   } catch (error) {
-    empty('שגיאת ספק', error.message, true);
+    empty('שגיאת חיבור', error.message, true);
   }
 });
 
 empty(
   'מוכן לחיפוש',
-  'בחר יעד ולחץ מצא חבילות. המערכת תציג רק נתוני ספקים אמיתיים ותסמן מידע חסר.'
+  'בחר יעד ולחץ מצא ובדוק חבילה. המערכת תציג רק נתוני ספקים אמיתיים ותסמן מידע חסר.'
 );
 loadStatus();
