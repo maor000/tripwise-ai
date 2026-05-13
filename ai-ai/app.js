@@ -2,6 +2,14 @@ const form = document.querySelector('#tripForm');
 const dealGrid = document.querySelector('#dealGrid');
 const providerStatus = document.querySelector('#providerStatus');
 const agentStatus = document.querySelector('#agentStatus');
+const FRONTEND_VERSION = '20260513f';
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((reg) => reg.unregister())).catch(() => {});
+}
+if ('caches' in window) {
+  caches.keys().then((keys) => keys.forEach((key) => caches.delete(key))).catch(() => {});
+}
 
 const LABELS = {
   travelInsurance: 'ביטוח נסיעות רפואי',
@@ -33,6 +41,10 @@ function checked(id) {
   return Boolean(document.querySelector(`#${id}`)?.checked);
 }
 
+function apiUrl(path) {
+  return `${path}?v=${encodeURIComponent(FRONTEND_VERSION)}&t=${Date.now()}`;
+}
+
 function payload() {
   return {
     destination: document.querySelector('#destination').value.trim(),
@@ -57,12 +69,20 @@ function empty(title, text, isError = false) {
   dealGrid.innerHTML = `<article class="empty"><h3>${esc(title)}</h3><p class="${isError ? 'error-note' : ''}">${esc(text)}</p></article>`;
 }
 
+function explainBadServerResponse(status, text) {
+  const clean = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (status === 401 || status === 403 || clean.toLowerCase().includes('page could not be found')) {
+    return 'האתר קיבל דף מערכת במקום נתוני ספק. זה בדרך כלל אומר שהדפדפן פתח גרסה ישנה או כתובת ישנה. פתח את הכתובת הראשית הקבועה ורענן חזק פעם אחת.';
+  }
+  return 'השרת החזיר תשובה לא תקינה במקום JSON. אין שימוש במחירי דמו, והמערכת לא תציג חבילה שלא הגיעה מספק אמיתי.';
+}
+
 async function readJsonSafely(response) {
   const contentType = response.headers.get('content-type') || '';
   const text = await response.text();
 
   if (!contentType.includes('application/json')) {
-    throw new Error('השרת החזיר דף שגיאה במקום נתוני ספק. פתח את הכתובת הראשית המעודכנת של האתר או רענן חזק עם Ctrl+F5.');
+    throw new Error(explainBadServerResponse(response.status, text));
   }
 
   try {
@@ -118,8 +138,8 @@ function normalizeProviderResult(item) {
 
 function providerErrorText(data) {
   const provider = (data.providers || []).find((item) => item.status === 'provider_error');
-  if (!provider) return '';
-  const detail = provider.providerMessage || provider.error || data.message || '';
+  if (!provider && data.state !== 'provider_error') return '';
+  const detail = provider?.providerMessage || provider?.error || data.message || '';
   return detail
     ? `Travelpayouts מחובר, אבל החזיר שגיאה: ${detail}`
     : 'Travelpayouts מחובר, אבל החזיר שגיאה בזמן החיפוש. ייתכן שהטוקן אינו מתאים למסלול הזה או שאין הרשאה לנתונים האלה.';
@@ -177,7 +197,7 @@ function render(items = [], data = {}, request = payload()) {
 
 async function loadStatus() {
   try {
-    const response = await fetch('/api/providers/status', { cache: 'no-store' });
+    const response = await fetch(apiUrl('/api/providers/status'), { cache: 'no-store' });
     const data = await readJsonSafely(response);
     const providers = (data.providers || [])
       .map((provider) => `${provider.name}: ${provider.configured ? 'מחובר' : 'לא מוגדר'}`)
@@ -196,9 +216,9 @@ form.addEventListener('submit', async (event) => {
   empty('בודק ספקים...', 'פונה לשרת בלבד. מפתחות API לא נחשפים בדפדפן.');
 
   try {
-    const response = await fetch('/api/search/packages', {
+    const response = await fetch(apiUrl('/api/search/packages'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(request),
       cache: 'no-store',
     });
