@@ -12,10 +12,30 @@
         const host = window.location.hostname;
         if (host.endsWith('.vercel.app') && host !== canonicalHost) {
           window.location.replace(`https://${canonicalHost}${window.location.pathname}${window.location.search}${window.location.hash}`);
+          return;
+        }
+
+        const resetKey = 'tripwise-cache-reset-20260513f';
+        if (localStorage.getItem(resetKey) !== 'done') {
+          window.addEventListener('load', async () => {
+            try {
+              if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map((registration) => registration.unregister()));
+              }
+              if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((key) => caches.delete(key)));
+              }
+              localStorage.setItem(resetKey, 'done');
+            } catch (error) {
+              localStorage.setItem(resetKey, 'done');
+            }
+          });
         }
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260513c" />
+    <link rel="stylesheet" href="styles.css?v=20260513f" />
   </head>
   <body>
     <header class="topbar">
@@ -25,6 +45,7 @@
         <a href="#questions">שאלות</a>
         <a href="#compare">כדאיות</a>
         <a href="#insurance">ביטוח</a>
+        <a href="#status">חיבור ספקים</a>
         <a href="#deals">תוצאות</a>
       </nav>
     </header>
@@ -62,7 +83,7 @@
           <h2>הסוכן לא רק מחפש מחיר. הוא שואל מה באמת מתאים ללקוח.</h2>
         </div>
         <div class="info-grid">
-          <article><span>1</span><h3>מה התקציב וההרכב?</h3><p>זוג, משפחה, חברים או נוסע יחיד משפיעים על בחירת טיסה, מלון, חדרים וביטוח.</p></article>
+          <article><span>1</span><h3>מה התקציב וההרכב?</h3><p>זוג, משפחה, חברים או נוסע יחיד משפיעים על טיסה, מלון, חדרים וביטוח.</p></article>
           <article><span>2</span><h3>מה יותר חשוב?</h3><p>מחיר נמוך, נוחות, ביטול גמיש, מלון טוב או חופשה רגועה. לפי זה נקבע דירוג הכדאיות.</p></article>
           <article><span>3</span><h3>אילו סיכונים לכסות?</h3><p>כבודה, בריאות, תאונות אישיות, ביטול נסיעה או מצב חירום. עד חיבור ספק ביטוח זה יסומן כהמלצה לבדיקה.</p></article>
           <article><span>4</span><h3>מה אמיתי ומה חסר?</h3><p>תוצאה מספק מוצגת כמאומתת. חבילה שה־AI ירכיב מסומנת בנפרד, וכל מידע חסר מוצג ללקוח.</p></article>
@@ -112,6 +133,6 @@
     </main>
 
     <aside class="agent"><strong>TripWise Agent</strong><span id="agentStatus">מוכן לבדיקה</span></aside>
-    <script src="app.js?v=20260513c"></script>
+    <script src="app.js?v=20260513f"></script>
   </body>
 </html>
