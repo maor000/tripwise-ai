@@ -11,6 +11,11 @@ const DESTINATIONS = {
   'לונדון': 'LON',
   athens: 'ATH',
   'אתונה': 'ATH',
+  telaviv: 'TLV',
+  'tel-aviv': 'TLV',
+  'תל אביב': 'TLV',
+  'תל־אביב': 'TLV',
+  'נתבג': 'TLV',
 };
 
 function send(res, statusCode, payload) {
@@ -38,8 +43,14 @@ function readBody(req) {
 
 function airportCode(value, fallback) {
   const key = String(value || '').trim().toLowerCase();
-  if (/^[a-z]{3}$/i.test(key)) return key.toUpperCase();
-  return DESTINATIONS[key] || fallback;
+  if (/^[a-z]{2,3}$/i.test(key)) return key.toUpperCase();
+  if (DESTINATIONS[key]) return DESTINATIONS[key];
+
+  const fallbackKey = String(fallback || '').trim().toLowerCase();
+  if (/^[a-z]{2,3}$/i.test(fallbackKey)) return fallbackKey.toUpperCase();
+  if (DESTINATIONS[fallbackKey]) return DESTINATIONS[fallbackKey];
+
+  return 'TLV';
 }
 
 function buildPackage(row, index, request, marker, origin, destination) {
