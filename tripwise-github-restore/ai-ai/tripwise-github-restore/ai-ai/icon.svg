@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TripWise AI">
-  <rect width="512" height="512" rx="96" fill="#006d77"/>
-  <path d="M106 300c58-88 116-132 174-132 48 0 89 29 126 88-41-22-80-32-116-28-59 7-113 46-184 72Z" fill="#f2c14e"/>
-  <path d="M118 336c64-22 118-54 164-96 30-28 59-43 87-47 21-3 39 2 56 16-27 74-84 132-173 173-47-4-91-19-134-46Z" fill="#ffffff"/>
-  <path d="M180 148h158v48H180z" fill="#17202a"/>
-  <path d="M234 148h50v216h-50z" fill="#17202a"/>
-</svg>
