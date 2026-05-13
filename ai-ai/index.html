@@ -15,7 +15,7 @@
           return;
         }
 
-        const resetKey = 'tripwise-cache-reset-20260513f';
+        const resetKey = 'tripwise-cache-reset-20260513g';
         if (localStorage.getItem(resetKey) !== 'done') {
           window.addEventListener('load', async () => {
             try {
@@ -35,13 +35,14 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260513f" />
+    <link rel="stylesheet" href="styles.css?v=20260513g" />
   </head>
   <body>
     <header class="topbar">
       <strong>TripWise AI</strong>
       <nav>
         <a href="#search">חיפוש</a>
+        <a href="#live">מה פעיל עכשיו</a>
         <a href="#questions">שאלות</a>
         <a href="#compare">כדאיות</a>
         <a href="#insurance">ביטוח</a>
@@ -53,12 +54,21 @@
     <main>
       <section class="hero" id="search">
         <div class="hero-copy">
-          <p class="eyebrow">סוכן נסיעות AI</p>
-          <h1>תן יעד, תקציב ומספר נוסעים. הסוכן יחפש נתוני ספקים אמיתיים בלבד.</h1>
-          <p>המערכת לא ממציאה מחירים. אם חסר מלון, מזוודה, ביטוח, ארוחות או תנאי החזר, זה יסומן בצורה ברורה.</p>
+          <p class="eyebrow">גרסה פעילה: ספקים אמיתיים בלבד</p>
+          <h1>הסוכן מחפש נתוני ספקים, בודק כדאיות ומסמן מה חסר לפני שמציע חבילה.</h1>
+          <p>אין מחירי דמו. אין המצאות. אם חסר מלון, מזוודה, ביטוח, ארוחות או תנאי החזר, זה יופיע ללקוח בצורה ברורה.</p>
+          <div class="hero-actions">
+            <a href="#live">בדוק מה מחובר</a>
+            <a href="#compare">איך מחליטים מה כדאי</a>
+            <a href="#insurance">ביטוחים וביטולים</a>
+          </div>
         </div>
 
         <form id="tripForm" class="panel">
+          <div class="panel-note">
+            <strong>חיפוש חבילה אמיתית</strong>
+            <span>הטופס פונה לשרת שלך בלבד. מפתחות API לא נחשפים בדפדפן.</span>
+          </div>
           <label>יעד<input id="destination" placeholder="רומא, כרתים, דובאי" /></label>
           <label>תקציב<select id="budget"><option value="3500">עד 3,500 ₪</option><option value="5000" selected>עד 5,000 ₪</option><option value="7500">עד 7,500 ₪</option><option value="10000">עד 10,000 ₪</option></select></label>
           <label>נוסעים<select id="travelers"><option value="couple">2 מבוגרים</option><option value="family">משפחה</option><option value="friends">חברים</option><option value="solo">נוסע יחיד</option></select></label>
@@ -77,16 +87,23 @@
         </form>
       </section>
 
+      <section class="live-strip" id="live">
+        <article><strong>Travelpayouts</strong><span>מחובר ומחזיר תוצאות ספק אמיתיות</span></article>
+        <article><strong>OpenAI</strong><span>מחובר לדירוג, הסבר והשוואה בלבד</span></article>
+        <article><strong>אין דמו</strong><span>אם חסר מידע, המערכת מסמנת חסר ולא ממציאה</span></article>
+        <article><strong>כתובת אחת</strong><span>tripwise-ai-trip-wise-ai.vercel.app</span></article>
+      </section>
+
       <section class="explain" id="questions">
         <div class="section-title">
           <p class="eyebrow">שאלות לפני הצעה</p>
-          <h2>הסוכן לא רק מחפש מחיר. הוא שואל מה באמת מתאים ללקוח.</h2>
+          <h2>לפני שהסוכן מציע חבילה, הוא בודק מה באמת מתאים ללקוח.</h2>
         </div>
         <div class="info-grid">
-          <article><span>1</span><h3>מה התקציב וההרכב?</h3><p>זוג, משפחה, חברים או נוסע יחיד משפיעים על טיסה, מלון, חדרים וביטוח.</p></article>
-          <article><span>2</span><h3>מה יותר חשוב?</h3><p>מחיר נמוך, נוחות, ביטול גמיש, מלון טוב או חופשה רגועה. לפי זה נקבע דירוג הכדאיות.</p></article>
-          <article><span>3</span><h3>אילו סיכונים לכסות?</h3><p>כבודה, בריאות, תאונות אישיות, ביטול נסיעה או מצב חירום. עד חיבור ספק ביטוח זה יסומן כהמלצה לבדיקה.</p></article>
-          <article><span>4</span><h3>מה אמיתי ומה חסר?</h3><p>תוצאה מספק מוצגת כמאומתת. חבילה שה־AI ירכיב מסומנת בנפרד, וכל מידע חסר מוצג ללקוח.</p></article>
+          <article><span>1</span><h3>מי נוסע ומה התקציב?</h3><p>זוג, משפחה, חברים או נוסע יחיד משפיעים על טיסה, חדרים, ביטוח ותוספות.</p></article>
+          <article><span>2</span><h3>מה הכי חשוב?</h3><p>זול, נוח, גמיש לביטול, מלון טוב או רמה גבוהה. לפי זה נקבע דירוג הכדאיות.</p></article>
+          <article><span>3</span><h3>אילו סיכונים לבדוק?</h3><p>מלחמה, ביטול טיסה, בעיה במלון, כבודה, בריאות או שינוי מצד ספק.</p></article>
+          <article><span>4</span><h3>מה אמיתי ומה חסר?</h3><p>נתון מספק מוצג כמאומת. נתון חסר מוצג כחסר. AI לא ממציא מחיר, מלון או החזר.</p></article>
         </div>
       </section>
 
@@ -94,15 +111,15 @@
         <div>
           <p class="eyebrow">בדיקת כדאיות</p>
           <h2>מה זה אומר בדיקת כדאיות?</h2>
-          <p>זו בדיקה שלא מסתכלת רק על המחיר. הסוכן משווה מחיר, שעות טיסה, מיקום, ארוחות, מזוודה, ביטול, אמינות הספק, ביטוח ונוחות ללקוח.</p>
+          <p>זו בדיקה שלא מסתכלת רק על המחיר. הסוכן משווה מחיר, שעות טיסה, מיקום, ארוחות, מזוודה, ביטול, אמינות ספק, ביטוח ונוחות ללקוח.</p>
           <ul class="clean-list">
-            <li>אם הלקוח ביקש זול, המחיר יקבל משקל גבוה יותר.</li>
-            <li>אם הלקוח ביקש נוחות, שעות טיסה ותנאי ביטול יקבלו משקל גבוה יותר.</li>
-            <li>אם חסר מידע, החבילה לא מוצגת כאילו הכול ידוע.</li>
+            <li>לקוח שמחפש זול יקבל עדיפות למחיר, אבל לא על חשבון מידע חסר.</li>
+            <li>לקוח שמחפש נוחות יקבל עדיפות לשעות טיסה, פחות עצירות ותנאי ביטול ברורים.</li>
+            <li>לקוח שמחפש ביטחון יקבל עדיפות לחבילות עם תנאי ספק ברורים וביטוח מתאים.</li>
           </ul>
         </div>
         <div class="policy-box">
-          <h3>ביטולים והחזרים</h3>
+          <h3>ביטולים, מלחמה והחזר</h3>
           <p>האתר מציג את תנאי הספק בלבד. אם יש מלחמה, ביטול טיסה או בעיה במלון, ההחזר תלוי בספק, חברת התעופה או הביטוח. עמלת שירות יכולה להיות לא מזוכה אם היא מוצגת מראש.</p>
         </div>
       </section>
@@ -111,7 +128,7 @@
         <div>
           <p class="eyebrow">ביטוח ותוספות</p>
           <h2>חבילה טובה צריכה לכלול גם בדיקת ביטוח</h2>
-          <p>בשלב הזה האתר יודע לסמן איזה ביטוח צריך לבדוק. כדי להציג מחיר ביטוח אמיתי צריך לחבר ספק ביטוח/API מורשה. עד אז לא יוצג מחיר ביטוח מומצא.</p>
+          <p>האתר יודע לסמן איזה ביטוח צריך לבדוק. כדי להציג מחיר ביטוח אמיתי צריך לחבר ספק ביטוח/API מורשה. עד אז לא יוצג מחיר ביטוח מומצא.</p>
         </div>
         <div class="insurance-grid">
           <article><h3>ביטוח נסיעות רפואי</h3><p>כיסוי רפואי בחו״ל, אשפוז, תרופות ושירותי חירום לפי תנאי הפוליסה.</p></article>
