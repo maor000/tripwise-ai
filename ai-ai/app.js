@@ -131,7 +131,7 @@ form.addEventListener('submit', async (event) => {
   empty('בודק ספקים...', 'פונה לשרת בלבד. מפתחות API לא נחשפים בדפדפן.');
 
   try {
-    const response = await fetch('/api/search/flights', {
+    const response = await fetch('/api/search/packages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload()),
