@@ -4,18 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TripWise AI | סוכן חופשות חכם</title>
-    <meta name="description" content="סוכן AI למציאת טיסות וחבילות מספקים מחוברים בלבד, עם בדיקת כדאיות, שקיפות ספקים ותנאי ביטול." />
-    <link rel="stylesheet" href="styles.css?v=20260513" />
+    <meta name="description" content="סוכן AI למציאת טיסות וחבילות מספקים מחוברים בלבד, עם בדיקת כדאיות, שאלות חכמות, ביטוח נסיעות ותנאי ביטול שקופים." />
+    <link rel="stylesheet" href="styles.css?v=20260513b" />
   </head>
   <body>
     <header class="topbar">
       <strong>TripWise AI</strong>
       <nav>
         <a href="#search">חיפוש</a>
-        <a href="#how">איך זה עובד</a>
-        <a href="#compare">בדיקת כדאיות</a>
+        <a href="#questions">שאלות</a>
+        <a href="#compare">כדאיות</a>
+        <a href="#insurance">ביטוח</a>
         <a href="#deals">תוצאות</a>
-        <a href="#status">ספקים</a>
       </nav>
     </header>
 
@@ -24,27 +24,38 @@
         <div class="hero-copy">
           <p class="eyebrow">סוכן נסיעות AI</p>
           <h1>תן יעד, תקציב ומספר נוסעים. הסוכן יחפש נתוני ספקים אמיתיים בלבד.</h1>
-          <p>אין מחירי דמו ואין המצאות. אם חסר מלון, מזוודה, ארוחות או תנאי החזר, זה יסומן בבירור.</p>
+          <p>המערכת לא ממציאה מחירים. אם חסר מלון, מזוודה, ביטוח, ארוחות או תנאי החזר, זה יסומן בצורה ברורה.</p>
         </div>
+
         <form id="tripForm" class="panel">
           <label>יעד<input id="destination" placeholder="רומא, כרתים, דובאי" /></label>
-          <label>תקציב<select id="budget"><option value="3500">עד 3,500 ₪</option><option value="5000" selected>עד 5,000 ₪</option><option value="7500">עד 7,500 ₪</option></select></label>
-          <label>נוסעים<select id="travelers"><option value="couple">2 מבוגרים</option><option value="family">משפחה</option><option value="friends">חברים</option></select></label>
-          <label>סגנון<select id="style"><option value="cheap">הכי משתלם</option><option value="comfort">נוחות</option><option value="luxury">יוקרתי</option></select></label>
-          <button type="submit">מצא חבילות</button>
+          <label>תקציב<select id="budget"><option value="3500">עד 3,500 ₪</option><option value="5000" selected>עד 5,000 ₪</option><option value="7500">עד 7,500 ₪</option><option value="10000">עד 10,000 ₪</option></select></label>
+          <label>נוסעים<select id="travelers"><option value="couple">2 מבוגרים</option><option value="family">משפחה</option><option value="friends">חברים</option><option value="solo">נוסע יחיד</option></select></label>
+          <label>מה הכי חשוב?<select id="priority"><option value="value">הכי משתלם</option><option value="cheap">הכי זול</option><option value="comfort">נוחות ושעות טיסה</option><option value="flexible">ביטול גמיש והחזר</option><option value="premium">רמה גבוהה</option></select></label>
+          <label>סגנון<select id="style"><option value="cheap">משתלם</option><option value="beach">ים וריזורט</option><option value="city">עיר ושופינג</option><option value="luxury">יוקרתי</option></select></label>
+          <label class="wide">מה חשוב לך בחבילה?<textarea id="notes" rows="3" placeholder="לדוגמה: ביטוח נסיעות, ביטול בגלל מלחמה, ארוחת בוקר, מלון במרכז, מזוודה, טיסה ישירה"></textarea></label>
+          <fieldset class="checks">
+            <legend>ביטוחים ותוספות לבדיקה</legend>
+            <label><input type="checkbox" id="travelInsurance" checked /> ביטוח נסיעות רפואי</label>
+            <label><input type="checkbox" id="lifeInsurance" /> הרחבת חיים/תאונות אישיות</label>
+            <label><input type="checkbox" id="baggageInsurance" /> כיסוי כבודה</label>
+            <label><input type="checkbox" id="cancelInsurance" checked /> ביטול נסיעה/מצב חירום</label>
+            <label><input type="checkbox" id="flexibleOnly" /> להעדיף חבילות שניתן לבטל</label>
+          </fieldset>
+          <button type="submit">מצא ובדוק חבילה</button>
         </form>
       </section>
 
-      <section class="explain" id="how">
+      <section class="explain" id="questions">
         <div class="section-title">
-          <p class="eyebrow">שקיפות מלאה</p>
-          <h2>איך ההזמנה עובדת</h2>
+          <p class="eyebrow">שאלות לפני הצעה</p>
+          <h2>הסוכן לא רק מחפש מחיר. הוא שואל מה באמת מתאים ללקוח.</h2>
         </div>
         <div class="info-grid">
-          <article><span>1</span><h3>המשתמש מבקש חופשה</h3><p>אפשר לרשום יעד, תקציב וסגנון, או לבקש רעיונות בהמשך.</p></article>
-          <article><span>2</span><h3>האתר פונה לספקים</h3><p>החיפוש רץ דרך API או קישור שותפים מורשה. המפתח נשאר בשרת ולא בדפדפן.</p></article>
-          <article><span>3</span><h3>המערכת מסמנת מה אמיתי</h3><p>כל תוצאה מקבלת מקור, ספק, זמן בדיקה, סטטוס אימות ומה חסר.</p></article>
-          <article><span>4</span><h3>הלקוח עובר לספק</h3><p>התשלום, האישור ותנאי הביטול הסופיים נקבעים אצל הספק שממנו מגיעה ההצעה.</p></article>
+          <article><span>1</span><h3>מה התקציב וההרכב?</h3><p>זוג, משפחה, חברים או נוסע יחיד משפיעים על בחירת טיסה, מלון, חדרים וביטוח.</p></article>
+          <article><span>2</span><h3>מה יותר חשוב?</h3><p>מחיר נמוך, נוחות, ביטול גמיש, מלון טוב או חופשה רגועה. לפי זה נקבע דירוג הכדאיות.</p></article>
+          <article><span>3</span><h3>אילו סיכונים לכסות?</h3><p>כבודה, בריאות, תאונות אישיות, ביטול נסיעה או מצב חירום. עד חיבור ספק ביטוח זה יסומן כהמלצה לבדיקה.</p></article>
+          <article><span>4</span><h3>מה אמיתי ומה חסר?</h3><p>תוצאה מספק מוצגת כמאומתת. חבילה שה־AI ירכיב מסומנת בנפרד, וכל מידע חסר מוצג ללקוח.</p></article>
         </div>
       </section>
 
@@ -52,11 +63,30 @@
         <div>
           <p class="eyebrow">בדיקת כדאיות</p>
           <h2>מה זה אומר בדיקת כדאיות?</h2>
-          <p>זו בדיקה שלא מסתכלת רק על המחיר. הסוכן משווה מחיר, שעות טיסה, מיקום, ארוחות, מזוודה, ביטול, אמינות הספק ונוחות ללקוח.</p>
+          <p>זו בדיקה שלא מסתכלת רק על המחיר. הסוכן משווה מחיר, שעות טיסה, מיקום, ארוחות, מזוודה, ביטול, אמינות הספק, ביטוח ונוחות ללקוח.</p>
+          <ul class="clean-list">
+            <li>אם הלקוח ביקש זול, המחיר יקבל משקל גבוה יותר.</li>
+            <li>אם הלקוח ביקש נוחות, שעות טיסה ותנאי ביטול יקבלו משקל גבוה יותר.</li>
+            <li>אם חסר מידע, החבילה לא מוצגת כאילו הכול ידוע.</li>
+          </ul>
         </div>
         <div class="policy-box">
           <h3>ביטולים והחזרים</h3>
-          <p>האתר מציג את תנאי הספק בלבד. אם יש מלחמה, ביטול טיסה או בעיה במלון, ההחזר תלוי בספק/חברת התעופה/ביטוח. עמלת שירות יכולה להיות לא מזוכה אם היא מוצגת מראש.</p>
+          <p>האתר מציג את תנאי הספק בלבד. אם יש מלחמה, ביטול טיסה או בעיה במלון, ההחזר תלוי בספק, חברת התעופה או הביטוח. עמלת שירות יכולה להיות לא מזוכה אם היא מוצגת מראש.</p>
+        </div>
+      </section>
+
+      <section class="insurance" id="insurance">
+        <div>
+          <p class="eyebrow">ביטוח ותוספות</p>
+          <h2>חבילה טובה צריכה לכלול גם בדיקת ביטוח</h2>
+          <p>בשלב הזה האתר יודע לסמן איזה ביטוח צריך לבדוק. כדי להציג מחיר ביטוח אמיתי צריך לחבר ספק ביטוח/API מורשה. עד אז לא יוצג מחיר ביטוח מומצא.</p>
+        </div>
+        <div class="insurance-grid">
+          <article><h3>ביטוח נסיעות רפואי</h3><p>כיסוי רפואי בחו״ל, אשפוז, תרופות ושירותי חירום לפי תנאי הפוליסה.</p></article>
+          <article><h3>ביטול נסיעה</h3><p>בדיקה האם ניתן לקבל החזר במקרה ביטול, מלחמה, מחלה או שינוי מצד הספק.</p></article>
+          <article><h3>כבודה ומזוודות</h3><p>כיסוי לאובדן, איחור או נזק לכבודה, בנפרד ממחיר הטיסה.</p></article>
+          <article><h3>חיים ותאונות אישיות</h3><p>הרחבה אפשרית לפי צורך הלקוח וסוג הנסיעה.</p></article>
         </div>
       </section>
 
@@ -72,6 +102,6 @@
     </main>
 
     <aside class="agent"><strong>TripWise Agent</strong><span id="agentStatus">מוכן לבדיקה</span></aside>
-    <script src="app.js?v=20260513"></script>
+    <script src="app.js?v=20260513b"></script>
   </body>
 </html>
