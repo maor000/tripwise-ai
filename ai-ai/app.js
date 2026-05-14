@@ -10,38 +10,30 @@ const agentModal = document.querySelector('#agentModal');
 const agentBuild = document.querySelector('#agentBuild');
 const agentReply = document.querySelector('#agentReply');
 
-const FRONTEND_VERSION = '20260514-provider-cards-v3';
+const FRONTEND_VERSION = '20260514-provider-cards-v4';
 const PACKAGE_ENDPOINTS = ['/api/search/packages', '/api/packages/search'];
 const PROVIDER_STATUS_ENDPOINT = '/api/providers/status';
 
 const AIRPORT_NAMES = {
-  TLV: 'תל אביב',
-  ROM: 'רומא',
-  FCO: 'רומא',
-  CIA: 'רומא',
-  HER: 'כרתים',
-  ATH: 'אתונה',
-  DXB: 'דובאי',
-  PAR: 'פריז',
-  CDG: 'פריז',
-  ORY: 'פריז',
-  LON: 'לונדון',
-  LHR: 'לונדון',
-  LGW: 'לונדון',
-  AMS: 'אמסטרדם',
-  BCN: 'ברצלונה',
-  MAD: 'מדריד',
-  IST: 'איסטנבול',
-  LCA: 'לרנקה',
+  TLV: 'תל אביב', ROM: 'רומא', FCO: 'רומא', CIA: 'רומא',
+  HER: 'כרתים', ATH: 'אתונה', DXB: 'דובאי', PAR: 'פריז', CDG: 'פריז', ORY: 'פריז',
+  LON: 'לונדון', LHR: 'לונדון', LGW: 'לונדון', AMS: 'אמסטרדם', BCN: 'ברצלונה',
+  MAD: 'מדריד', IST: 'איסטנבול', LCA: 'לרנקה'
 };
 
 const FIELD_NAMES = {
-  hotel: 'מלון',
-  baggage: 'מזוודה',
-  meals: 'ארוחות',
-  refundable_terms: 'תנאי החזר וביטול',
-  insurance_price: 'מחיר ביטוח',
+  hotel: 'מלון', baggage: 'מזוודה', meals: 'ארוחות', refundable_terms: 'תנאי החזר וביטול',
+  insurance_price: 'מחיר ביטוח', supplier_url: 'קישור ספק'
 };
+
+function loadOverrides() {
+  if (document.querySelector('link[data-tripwise-overrides]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = `overrides.css?v=${encodeURIComponent(FRONTEND_VERSION)}`;
+  link.dataset.tripwiseOverrides = 'true';
+  document.head.appendChild(link);
+}
 
 function escapeHtml(value = '') {
   return String(value)
@@ -73,10 +65,10 @@ function formPayload() {
       life: checked('lifeInsurance'),
       baggage: checked('baggageInsurance'),
       cancellation: checked('cancelInsurance'),
-      flexibleOnly: checked('flexibleOnly'),
+      flexibleOnly: checked('flexibleOnly')
     },
     currency: 'ILS',
-    locale: 'he-IL',
+    locale: 'he-IL'
   };
 }
 
@@ -88,7 +80,7 @@ function airportLabel(value) {
   return name ? `${code} (${name})` : raw;
 }
 
-function destinationLabel(value) {
+function destinationName(value) {
   const code = String(value || '').trim().toUpperCase();
   return AIRPORT_NAMES[code] || value || 'יעד מהספק';
 }
@@ -96,22 +88,13 @@ function destinationLabel(value) {
 function money(value, currency = 'ILS') {
   const amount = Number(value || 0);
   if (!amount) return 'מחיר מהספק';
-  return new Intl.NumberFormat('he-IL', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return new Intl.NumberFormat('he-IL', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 }
 
 function timeLabel(value) {
   if (!value) return 'עכשיו';
   try {
-    return new Intl.DateTimeFormat('he-IL', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(value));
+    return new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
   } catch {
     return 'עכשיו';
   }
@@ -154,6 +137,7 @@ async function readJsonSafely(response, endpoint) {
 
 function normalizePackage(item = {}) {
   const flight = item.flight || {};
+  const destinationCode = item.destination || flight.destination || '';
   const hotel = item.hotel || null;
   const baggage = item.baggage || flight.baggage || { included: null };
   const meals = item.meals || { breakfastIncluded: null };
@@ -165,8 +149,8 @@ function normalizePackage(item = {}) {
 
   return {
     id: item.id || `pkg-${Math.random().toString(16).slice(2)}`,
-    destination: destinationLabel(item.destination || flight.destination),
-    destinationCode: item.destination || flight.destination || '',
+    destination: destinationName(destinationCode),
+    destinationCode,
     dates: item.dates || flight.dates || {},
     hotel,
     flight,
@@ -188,59 +172,30 @@ function normalizePackage(item = {}) {
     missingFields: missingFields.length ? missingFields : missingData ? ['hotel', 'baggage', 'meals', 'refundable_terms', 'insurance_price'] : [],
     aiComposed: item.aiComposed === true || item.source === 'ai_composed',
     aiSummary: item.aiSummary || item.aiReason || '',
-    completePackage,
+    completePackage
   };
 }
 
-function verificationLabel(deal) {
-  if (deal.source === 'mock') return 'Mock בלבד';
+function statusText(deal) {
+  if (deal.source === 'mock') return 'לא אמיתי';
   if (deal.verified) return 'ספק מאומת';
-  return 'ממתין לאימות';
+  return 'דורש אימות לפני הזמנה';
 }
 
-function sourceLabel(deal) {
-  if (deal.source === 'mock') return 'לא אמיתי';
+function sourceText(deal) {
+  if (deal.source === 'mock') return 'Mock בלבד';
   if (deal.aiComposed) return 'AI הרכיב מנתוני ספק';
   if (deal.completePackage) return 'חבילה מלאה מספק';
   return 'נתון אמיתי מספק';
 }
 
-function availabilityLabel(status) {
+function availabilityText(status) {
   const labels = {
-    available: 'זמין מהספק',
-    unavailable: 'לא זמין',
-    provider_timeout: 'ספק לא ענה בזמן',
-    provider_error: 'שגיאת ספק',
-    pending_verification: 'דורש אימות לפני הזמנה',
-    price_changed: 'מחיר השתנה',
-    no_results: 'אין תוצאות',
+    available: 'זמין מהספק', unavailable: 'לא זמין', provider_timeout: 'הספק לא ענה בזמן',
+    provider_error: 'שגיאת ספק', pending_verification: 'דורש אימות לפני הזמנה',
+    price_changed: 'המחיר השתנה', no_results: 'אין תוצאות'
   };
   return labels[status] || status || 'בדיקת ספק';
-}
-
-function renderBadges(deal) {
-  const statusClass = deal.source === 'mock' ? 'is-mock' : deal.verified ? 'is-verified' : 'is-pending';
-  return `
-    <div class="package-badges" aria-label="סטטוס חבילה">
-      <span class="status-badge ${statusClass}">${escapeHtml(verificationLabel(deal))}</span>
-      <span class="status-badge">${escapeHtml(sourceLabel(deal))}</span>
-      <span class="status-badge">${escapeHtml(availabilityLabel(deal.availabilityStatus))}</span>
-      ${deal.missing_data ? '<span class="status-badge is-pending">חסר מידע</span>' : ''}
-    </div>
-  `;
-}
-
-function renderRouteVisual(deal) {
-  const origin = deal.flight?.origin || 'TLV';
-  const target = deal.flight?.destination || deal.destinationCode || deal.destination;
-  return `
-    <div class="deal-route" aria-label="מסלול טיסה">
-      <span>${escapeHtml(airportLabel(origin))}</span>
-      <strong>→</strong>
-      <span>${escapeHtml(airportLabel(target))}</span>
-      <small>${deal.completePackage ? 'חבילה מלאה' : 'טיסה אמיתית מספק'}</small>
-    </div>
-  `;
 }
 
 function insuranceText(request) {
@@ -249,23 +204,8 @@ function insuranceText(request) {
   if (request.insurance?.life) selected.push('חיים/תאונות אישיות');
   if (request.insurance?.baggage) selected.push('כיסוי כבודה');
   if (request.insurance?.cancellation) selected.push('ביטול נסיעה/מצב חירום');
-  if (request.insurance?.flexibleOnly) selected.push('להעדיף חבילה שניתן לבטל');
+  if (request.insurance?.flexibleOnly) selected.push('העדפת ביטול גמיש');
   return selected.length ? selected.join(', ') : 'לא נבחר ביטוח לבדיקה';
-}
-
-function renderFacts(deal, request) {
-  return `
-    <dl class="package-facts">
-      <div><dt>ספק</dt><dd>${escapeHtml(deal.supplierName)}</dd></div>
-      <div><dt>נבדק</dt><dd>${escapeHtml(timeLabel(deal.lastCheckedAt))}</dd></div>
-      <div><dt>טיסה</dt><dd>${escapeHtml(airportLabel(deal.flight?.origin || 'TLV'))} → ${escapeHtml(airportLabel(deal.flight?.destination || deal.destinationCode || deal.destination))}</dd></div>
-      <div><dt>מלון</dt><dd>${deal.hotel?.name ? escapeHtml(deal.hotel.name) : 'לא חזר מהספק'}</dd></div>
-      <div><dt>מזוודה</dt><dd>${escapeHtml(boolLabel(deal.baggage?.included, 'כלולה', 'לא כלולה'))}</dd></div>
-      <div><dt>ארוחת בוקר</dt><dd>${escapeHtml(boolLabel(deal.meals?.breakfastIncluded, 'כלולה', 'לא כלולה'))}</dd></div>
-      <div><dt>ביטול</dt><dd>${escapeHtml(boolLabel(deal.refundable, 'יש אפשרות החזר', 'ללא החזר', 'לפי תנאי ספק'))}</dd></div>
-      <div><dt>ביטוח לבדיקה</dt><dd>${escapeHtml(insuranceText(request))}</dd></div>
-    </dl>
-  `;
 }
 
 function worthinessText(deal, request) {
@@ -279,14 +219,6 @@ function worthinessText(deal, request) {
   return parts.join(' ') || 'צריך להשוות מול עוד תוצאות ספק לפני סגירה.';
 }
 
-function renderWarnings(deal) {
-  const warnings = [];
-  if (deal.aiComposed) warnings.push('זו חבילה שה-AI הרכיב מנתוני ספקים. חייבים לוודא כל רכיב לפני הזמנה.');
-  if (deal.missing_data) warnings.push(`חסר מידע: ${missingLabel(deal.missingFields)}. ה-AI לא ממציא מלון, ביטוח, מזוודה או החזר.`);
-  if (deal.source === 'mock') warnings.push('Mock: נתון פיתוח בלבד. אסור למכור או להציג כחבילה אמיתית.');
-  return warnings.length ? `<div class="package-warnings">${warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join('')}</div>` : '';
-}
-
 function renderScore(deal) {
   if (!scoreValue || !scoreDetails) return;
   if (!deal) {
@@ -294,23 +226,26 @@ function renderScore(deal) {
     scoreDetails.innerHTML = '<p class="score-empty">אין עדיין תוצאה לבדיקה.</p>';
     return;
   }
-
   const rows = [
     ['מחיר', deal.price ? 82 : 0],
     ['אמינות ספק', deal.verified ? 92 : 66],
     ['שלמות חבילה', deal.completePackage ? 90 : 45],
     ['ביטול והחזר', deal.refundable === true ? 88 : deal.refundable === false ? 45 : 55],
-    ['ביטוח', deal.missingFields.includes('insurance_price') ? 40 : 75],
+    ['ביטוח', deal.missingFields.includes('insurance_price') ? 40 : 75]
   ];
   const total = Math.round(rows.reduce((sum, row) => sum + row[1], 0) / rows.length);
   scoreValue.textContent = deal.confidenceScore || total;
   scoreDetails.innerHTML = rows.map(([label, value]) => `
-    <div class="score-row">
-      <span>${escapeHtml(label)}</span>
-      <div class="score-bar"><i style="width:${Number(value)}%"></i></div>
-      <strong>${Number(value)}</strong>
-    </div>
+    <div class="score-row"><span>${escapeHtml(label)}</span><div class="score-bar"><i style="width:${Number(value)}%"></i></div><strong>${Number(value)}</strong></div>
   `).join('');
+}
+
+function renderWarnings(deal) {
+  const warnings = [];
+  if (deal.aiComposed) warnings.push('זו חבילה שה-AI הרכיב מנתוני ספקים. חייבים לוודא כל רכיב לפני הזמנה.');
+  if (deal.missing_data) warnings.push(`חסר מידע: ${missingLabel(deal.missingFields)}. ה-AI לא ממציא מלון, ביטוח, מזוודה או החזר.`);
+  if (deal.source === 'mock') warnings.push('Mock: נתון פיתוח בלבד. אסור למכור או להציג כחבילה אמיתית.');
+  return warnings.length ? `<div class="package-warnings">${warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join('')}</div>` : '';
 }
 
 function renderDeals(items, request = formPayload()) {
@@ -322,25 +257,39 @@ function renderDeals(items, request = formPayload()) {
   }
 
   dealGrid.innerHTML = packages.map((deal) => {
+    const origin = deal.flight?.origin || 'TLV';
+    const target = deal.flight?.destination || deal.destinationCode || deal.destination;
     const title = deal.completePackage ? `חבילה ל${deal.destination}` : `טיסה אמיתית ל${deal.destination}`;
     const summary = deal.aiSummary || (deal.completePackage
       ? 'החבילה הגיעה מספק מחובר ותדורג לפי מחיר, טיסה, מלון, ארוחות וביטול.'
-      : 'הספק החזיר כרגע נתון טיסה אמיתי. מלון, ארוחות, מזוודה, ביטוח והחזר מסומנים כחסרים עד חיבור ספקים נוספים.');
+      : 'כרגע הספק החזיר נתון טיסה אמיתי. מלון, ארוחות, מזוודה, ביטוח והחזר מסומנים כחסרים עד חיבור ספקים נוספים.');
 
     return `
-      <article class="deal-card ${deal.source === 'mock' ? 'mock-card' : ''}">
-        ${renderRouteVisual(deal)}
+      <article class="deal-card provider-card ${deal.source === 'mock' ? 'mock-card' : ''}">
+        <div class="provider-route">
+          <span>${escapeHtml(airportLabel(origin))}</span>
+          <strong>→</strong>
+          <span>${escapeHtml(airportLabel(target))}</span>
+        </div>
         <div class="deal-body">
-          ${renderBadges(deal)}
-          <div class="deal-meta">
-            <span class="pill">${escapeHtml(deal.supplierName)}</span>
-            <span>${escapeHtml(deal.destination)}</span>
+          <div class="package-badges">
+            <span class="status-badge ${deal.verified ? 'is-verified' : 'is-pending'}">${escapeHtml(statusText(deal))}</span>
+            <span class="status-badge">${escapeHtml(sourceText(deal))}</span>
+            <span class="status-badge">${escapeHtml(availabilityText(deal.availabilityStatus))}</span>
+            ${deal.missing_data ? '<span class="status-badge is-pending">חסר מידע</span>' : ''}
           </div>
+          <p class="supplier-line">${escapeHtml(deal.supplierName)} · נבדק ${escapeHtml(timeLabel(deal.lastCheckedAt))}</p>
           <h3>${escapeHtml(title)}</h3>
           <p>${escapeHtml(summary)}</p>
-          ${renderFacts(deal, request)}
-          <span class="commission-note">${escapeHtml(deal.cancellationPolicy?.summary || 'תנאי הביטול וההחזר נקבעים אצל הספק לפני ההזמנה. עמלת שירות אינה מוחזרת אם הוצגה מראש.')}</span>
+          <dl class="package-facts compact-facts">
+            <div><dt>מלון</dt><dd>${deal.hotel?.name ? escapeHtml(deal.hotel.name) : 'לא חזר מהספק'}</dd></div>
+            <div><dt>מזוודה</dt><dd>${escapeHtml(boolLabel(deal.baggage?.included, 'כלולה', 'לא כלולה'))}</dd></div>
+            <div><dt>ארוחת בוקר</dt><dd>${escapeHtml(boolLabel(deal.meals?.breakfastIncluded, 'כלולה', 'לא כלולה'))}</dd></div>
+            <div><dt>ביטול</dt><dd>${escapeHtml(boolLabel(deal.refundable, 'יש אפשרות החזר', 'ללא החזר', 'לפי תנאי ספק'))}</dd></div>
+            <div><dt>ביטוח</dt><dd>${escapeHtml(insuranceText(request))}</dd></div>
+          </dl>
           <span class="commission-note">כדאיות: ${escapeHtml(worthinessText(deal, request))}</span>
+          <span class="commission-note">ביטול: ${escapeHtml(deal.cancellationPolicy?.summary || 'תנאי הביטול וההחזר נקבעים אצל הספק לפני ההזמנה. עמלת שירות אינה מוחזרת אם הוצגה מראש.')}</span>
           ${renderWarnings(deal)}
           <div class="deal-footer">
             <span class="price">${money(deal.price, deal.currency)}</span>
@@ -365,7 +314,7 @@ async function postPackageSearch(request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(request),
-        cache: 'no-store',
+        cache: 'no-store'
       });
       const data = await readJsonSafely(response, endpoint);
       if (!response.ok) throw new Error(data.message || data.error || `Provider API returned ${response.status}`);
@@ -384,17 +333,16 @@ async function runSearch() {
 
   try {
     const { data, endpoint } = await postPackageSearch(request);
+    const results = data.packages || data.results || data.flights || [];
     const problem = (data.providers || []).find((provider) => provider.status === 'provider_error');
-    if (problem && !(data.packages || data.results || data.flights || []).length) {
+    if (problem && !results.length) {
       emptyState('שגיאת ספק', problem.providerMessage || problem.error || 'הספק החזיר שגיאה בזמן החיפוש.', 'אין באתר מחירי דמה.');
       renderScore(null);
       if (agentStatus) agentStatus.textContent = 'צריך לבדוק הרשאות ספק';
       return;
     }
-
-    const results = data.packages || data.results || data.flights || [];
     renderDeals(results, request);
-    if (agentStatus) agentStatus.textContent = results.length ? `נמצאו ${results.length} תוצאות אמיתיות דרך ${endpoint}` : 'אין תוצאות ספק לבקשה הזו';
+    if (agentStatus) agentStatus.textContent = results.length ? `נמצאו ${results.length} תוצאות אמיתיות` : 'אין תוצאות ספק לבקשה הזו';
     document.querySelector('#deals')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (error) {
     emptyState('שגיאת חיבור', error.message, 'המערכת לא תציג נתוני דמה במקום ספק אמיתי.');
@@ -440,6 +388,10 @@ dealGrid?.addEventListener('click', (event) => {
 });
 
 openAgent?.addEventListener('click', () => {
+  if (agentReply) {
+    agentReply.textContent = 'כדי לבנות חבילה מלאה צריך לחבר גם ספק מלונות/חבילות וביטוח. כרגע הסוכן עובד רק עם נתוני ספק אמיתיים קיימים ולא ממציא מלון, ביטוח, מחיר או החזר.';
+  }
+  if (agentBuild) agentBuild.textContent = 'בדוק חבילות זמינות';
   if (agentModal?.showModal) agentModal.showModal();
 });
 
@@ -450,5 +402,6 @@ agentBuild?.addEventListener('click', () => {
   runSearch();
 });
 
+loadOverrides();
 emptyState('מוכן לחיפוש', 'בחר יעד ולחץ מצא חבילות חכמות. יוצגו רק נתוני ספקים אמיתיים ומידע חסר יסומן בצורה ברורה.', 'אין באתר מחירי דמה.');
 loadProviderStatus();
