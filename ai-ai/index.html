@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TripWise AI | סוכן חופשות חכם</title>
     <meta name="theme-color" content="#006d77" />
-    <meta name="description" content="סוכן נסיעות AI למציאת חבילות אמיתיות מספקים מחוברים, בדיקת כדאיות, ביטוחים ותנאי ביטול שקופים." />
+    <meta name="description" content="סוכן נסיעות AI למציאת טיסות וחבילות מספקים מחוברים, בדיקת כדאיות, ביטוחים ותנאי ביטול שקופים." />
+    <link rel="canonical" href="https://tripwise-ai-trip-wise-ai.vercel.app/" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
-    <link rel="canonical" href="https://tripwise-ai-trip-wise-ai.vercel.app/" />
     <meta http-equiv="Cache-Control" content="no-store" />
     <script>
       (() => {
@@ -17,7 +17,7 @@
           location.replace(`https://${canonicalHost}${location.pathname}${location.search}${location.hash}`);
           return;
         }
-        const resetKey = "tripwise-cache-reset-20260513-open-hero";
+        const resetKey = "tripwise-cache-reset-20260518-provider-components-v12";
         if (localStorage.getItem(resetKey) !== "done") {
           window.addEventListener("load", async () => {
             try {
@@ -36,7 +36,7 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260513-open-hero" />
+    <link rel="stylesheet" href="styles.css?v=20260518-provider-components-v12" />
   </head>
   <body>
     <header class="topbar" aria-label="ניווט ראשי">
@@ -58,8 +58,8 @@
       <section class="hero" id="search" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow">סוכן נסיעות AI</p>
-          <h1 id="hero-title">תן יעד, תקציב או רק מספר נוסעים. הסוכן יבנה לך חופשה משתלמת.</h1>
-          <p>טיסות, מלונות, ארוחות, ביטולים והסבר ברור למה חבילה אחת עדיפה על אחרת.</p>
+          <h1 id="hero-title">תן יעד, תקציב או רק מספר נוסעים. הסוכן יחפש נתוני ספקים אמיתיים בלבד.</h1>
+          <p>המערכת לא ממציאה מחירים. אם חסר מלון, מזוודה, ארוחות או תנאי החזר, זה יסומן בצורה ברורה.</p>
         </div>
 
         <form id="tripForm" class="search-panel" aria-label="חיפוש חופשה">
@@ -77,7 +77,7 @@
             <label><span>סגנון</span><select id="style" name="style"><option value="beach">ים וריזורט</option><option value="city">עיר, אוכל ושופינג</option><option value="luxury">יוקרתי ושקט</option><option value="cheap">הכי זול שאפשר</option></select></label>
           </div>
 
-          <label class="wide-field"><span>מה חשוב לך?</span><textarea id="notes" name="notes" rows="3" placeholder="לדוגמה: ארוחת בוקר, ביטוח נסיעות, ביטול בגלל מלחמה, מלון במרכז, מזוודה, טיסה ישירה"></textarea></label>
+          <label class="wide-field"><span>מה חשוב לך בחבילה?</span><textarea id="notes" name="notes" rows="3" placeholder="לדוגמה: ארוחת בוקר, ביטול בגלל מלחמה, מלון במרכז, מזוודה, טיסה ישירה"></textarea></label>
 
           <fieldset class="checks">
             <legend>ביטוחים ותוספות לבדיקה</legend>
@@ -95,15 +95,15 @@
         </form>
 
         <div class="hero-stats" aria-label="נתוני מערכת">
-          <div><strong>AI Score</strong><span>מחיר, מיקום, טיסה, ארוחות וביטולים</span></div>
-          <div><strong>10%</strong><span>מודל Flex לביטול עד 24 שעות</span></div>
-          <div><strong>+112M</strong><span>שילובי טיסה ומלון לדירוג</span></div>
+          <div><strong>AI Score</strong><span>מחיר, טיסה, נוחות, ביטול וסיכון</span></div>
+          <div><strong>ספק אמיתי</strong><span>מחיר וקישור הזמנה רק מ-API מחובר</span></div>
+          <div><strong>אין המצאות</strong><span>מלון, ביטוח והחזר יסומנו אם חסרים</span></div>
         </div>
       </section>
 
       <section class="live-strip" id="live">
-        <article><strong>אתר ראשון</strong><span>חיפוש, צ׳אט AI, דילים, השארת פרטים, וואטסאפ וקישורי ספקים.</span></article>
-        <article><strong>מנוע חבילות</strong><span>חיבור לספקי טיסות, מלונות וחבילות דרך API או Affiliate מורשה.</span></article>
+        <article><strong>אתר ראשון</strong><span>חיפוש, צ׳אט AI, דילים, השארת פרטים וקישורי ספקים.</span></article>
+        <article><strong>מנוע חבילות</strong><span>טיסות עכשיו דרך Travelpayouts/Aviasales, ובהמשך חיבור מלונות, ביטוח וחבילות מלאות.</span></article>
         <article><strong>אפליקציה</strong><span>התראות ירידת מחיר, ניהול פניות, ביטולים והמלצות לפי משתמש.</span></article>
       </section>
 
@@ -116,7 +116,7 @@
           <article><span>1</span><h3>מי נוסע ומה התקציב?</h3><p>זוג, משפחה או חברים משפיעים על חדרים, מזוודות, ביטוח ועלות כוללת.</p></article>
           <article><span>2</span><h3>מה עדיף?</h3><p>הכי זול, הכי נוח, ביטול גמיש, מלון טוב או רמה גבוהה.</p></article>
           <article><span>3</span><h3>מה הסיכון?</h3><p>ביטול טיסה, מלחמה, בעיה במלון, כבודה, בריאות או שינוי מצד ספק.</p></article>
-          <article><span>4</span><h3>מה אמיתי ומה חסר?</h3><p>נתון מספק מוצג כמאומת. נתון חסר מסומן כחסר. AI לא ממציא מחיר או החזר.</p></article>
+          <article><span>4</span><h3>מה אמיתי ומה חסר?</h3><p>נתון מספק מוצג כמאומת. נתון חסר מסומן כחסר. AI לא ממציא מחיר, מלון או החזר.</p></article>
         </div>
       </section>
 
@@ -128,7 +128,7 @@
           <ul class="clean-list">
             <li>לקוח שמחפש זול יקבל עדיפות למחיר, אבל לא על חשבון מידע חסר או סיכון גבוה.</li>
             <li>לקוח שמחפש נוחות יקבל עדיפות לשעות טיסה טובות, פחות עצירות ותנאי ביטול ברורים.</li>
-            <li>לקוח שמחפש ביטחון יקבל עדיפות לחבילות עם תנאי ספק ברורים וביטוח מתאים.</li>
+            <li>לקוח שמחפש ביטחון יקבל עדיפות לתנאי ספק ברורים, ביטול גמיש וביטוח מתאים.</li>
           </ul>
         </div>
         <div class="score-board" aria-live="polite">
@@ -159,8 +159,8 @@
       <section class="results-section" id="deals">
         <div class="section-title">
           <p class="eyebrow">תוצאות מספקים</p>
-          <h2>חבילות ותוצאות מספקים אמיתיים</h2>
-          <p>כאן יוצגו רק נתונים שהגיעו מספק/API מחובר. אם חסר מידע, המערכת תסמן אותו בצורה ברורה.</p>
+          <h2>תוצאות מספקים אמיתיים</h2>
+          <p>כרגע Travelpayouts/Aviasales מחזיר טיסות וקישורי הזמנה אמיתיים. מלונות, ביטוח, מזוודה ותנאי החזר מלאים דורשים ספקים נוספים, והמערכת תסמן אותם כחסרים במקום להמציא.</p>
         </div>
         <div id="dealGrid" class="grid"></div>
       </section>
@@ -174,10 +174,10 @@
     <dialog class="agent-modal" id="agentModal">
       <form method="dialog"><button class="close-button" aria-label="סגירה">×</button></form>
       <h2>בנה לי חבילה</h2>
-      <p id="agentReply">תן לי יעד, תקציב והרכב נוסעים. אם אין יעד, אני אשווה יעדים ואחזיר חבילה עם סיבה, מחיר ותנאי ביטול רק לפי נתוני ספק.</p>
+      <p id="agentReply">תן לי יעד, תקציב והרכב נוסעים. אם אין יעד, אני אשווה יעדים ואחזיר תוצאה רק לפי נתוני ספק אמיתיים.</p>
       <button class="primary-button" id="agentBuild" type="button">הצג המלצה עכשיו</button>
     </dialog>
 
-    <script src="app.js?v=20260513-open-hero"></script>
+    <script src="app.js?v=20260518-provider-components-v12"></script>
   </body>
 </html>
