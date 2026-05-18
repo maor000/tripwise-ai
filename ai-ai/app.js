@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260518-real-provider-v8';
+  const VERSION = '20260518-provider-components-v11';
   const AIRPORTS = {
     TLV: 'תל אביב', ROM: 'רומא', FCO: 'רומא', CIA: 'רומא', HER: 'כרתים', ATH: 'אתונה',
     DXB: 'דובאי', PAR: 'פריז', CDG: 'פריז', ORY: 'פריז', LON: 'לונדון', LHR: 'לונדון',
@@ -90,6 +90,36 @@
   function missingText(fields = []) {
     const list = fields.length ? fields : ['hotel', 'baggage', 'meals', 'refundable_terms', 'insurance_price'];
     return list.map((field) => FIELD_NAMES[field] || field).join(', ');
+  }
+
+  function isFlightOnlyProvider(deal) {
+    const supplier = String(deal.supplierName || '').toLowerCase();
+    return supplier.includes('travelpayouts') || supplier.includes('aviasales');
+  }
+
+  function componentText(field, deal) {
+    if (!isFlightOnlyProvider(deal)) return 'נדרש אימות מול הספק';
+    const labels = {
+      hotel: 'נדרש חיבור ספק מלונות',
+      baggage: 'לא נמסר ב-API הטיסות',
+      meals: 'נדרש ספק מלונות/חבילות',
+      breakfast: 'נדרש ספק מלונות/חבילות',
+      refundable: 'נדרש אימות תנאי כרטיס',
+      cancellation: 'נדרש אימות תנאי ספק/ביטוח',
+      insurance: 'נדרש חיבור ספק ביטוח'
+    };
+    return labels[field] || 'נדרש ספק נוסף';
+  }
+
+  function boolText(value, yes, no, unknown) {
+    if (value === true) return yes;
+    if (value === false) return no;
+    return unknown;
+  }
+
+  function worthinessText(deal) {
+    if (deal.completePackage) return 'כדאיות: חבילה מלאה מספק מחובר. הדירוג לפי מחיר, נוחות, ביטול, ביטוח ואמינות.';
+    return 'כדאיות: המחיר וקישור ההזמנה הגיעו מספק טיסות אמיתי. כדי להפוך את זה לחבילה מלאה צריך לחבר ספק מלונות, ביטוח ותנאי ביטול.';
   }
 
   function empty(title, text, note = '') {
@@ -187,8 +217,8 @@
     }
 
     dealGrid.innerHTML = deals.map((deal) => {
-      const title = deal.completePackage ? `חבילה ל${deal.destination}` : `טיסה אמיתית ל${deal.destination} - בסיס לבניית חבילה`;
-      const summary = deal.aiSummary || 'זה רכיב אמיתי מספק. כדי להפוך אותו לחבילה מלאה צריך להשלים מלון, ארוחות, מזוודה, ביטוח ותנאי ביטול מספקים מחוברים.';
+      const title = deal.completePackage ? `חבילה ל${deal.destination}` : `טיסה אמיתית ל${deal.destination}`;
+      const summary = deal.aiSummary || 'מה שחזר מהספק: מחיר טיסה וקישור הזמנה. מלון, ארוחות, מזוודה, ביטוח ותנאי החזר דורשים חיבור ספקים נוספים, ולכן הם מסומנים כחסרים ולא מומצאים.';
       const bookingText = deal.completePackage ? 'פתח הזמנה אצל הספק' : 'פתח טיסה אצל הספק';
 
       return `
@@ -201,23 +231,23 @@
           <div class="deal-body">
             <div class="package-badges">
               <span class="status-badge is-verified">ספק מאומת</span>
-              <span class="status-badge">טיסה/רכיב אמיתי מספק</span>
-              <span class="status-badge is-pending">רכיבים להשלמה</span>
+              <span class="status-badge">טיסה אמיתית מספק</span>
+              <span class="status-badge is-pending">לא חבילה מלאה עדיין</span>
             </div>
             <p class="supplier-line">${escapeHtml(deal.supplierName)} · נבדק ${escapeHtml(checkedAt(deal.lastCheckedAt))}</p>
             <h3>${escapeHtml(title)}</h3>
             <p>${escapeHtml(summary)}</p>
             <dl class="package-facts compact-facts">
-              <div><dt>מלון</dt><dd>${deal.hotel?.name ? escapeHtml(deal.hotel.name) : 'צריך ספק מלונות'}</dd></div>
-              <div><dt>מזוודה</dt><dd>${deal.baggage?.included === true ? 'כלולה' : 'לא חזר מהספק'}</dd></div>
-              <div><dt>ארוחת בוקר</dt><dd>${deal.meals?.breakfastIncluded === true ? 'כלולה' : 'לא חזר מהספק'}</dd></div>
-              <div><dt>ביטול</dt><dd>${deal.refundable === true ? 'יש החזר לפי ספק' : 'לפי תנאי ספק/ביטוח'}</dd></div>
-              <div><dt>ביטוח</dt><dd>${escapeHtml(insuranceText(request))}</dd></div>
+              <div><dt>מלון</dt><dd>${deal.hotel?.name ? escapeHtml(deal.hotel.name) : componentText('hotel', deal)}</dd></div>
+              <div><dt>מזוודה</dt><dd>${boolText(deal.baggage?.included, 'כלולה', 'לא כלולה', componentText('baggage', deal))}</dd></div>
+              <div><dt>ארוחת בוקר</dt><dd>${boolText(deal.meals?.breakfastIncluded, 'כלולה', 'לא כלולה', componentText('breakfast', deal))}</dd></div>
+              <div><dt>ביטול</dt><dd>${boolText(deal.refundable, 'יש החזר לפי ספק', 'ללא החזר לפי ספק', componentText('cancellation', deal))}</dd></div>
+              <div><dt>ביטוח</dt><dd>${escapeHtml(`${insuranceText(request)} · ${componentText('insurance', deal)}`)}</dd></div>
             </dl>
-            <span class="commission-note">כדאיות: המחיר אמיתי מהספק. הדירוג מתייחס למחיר, יעד, סיכון, ביטול ורכיבים חסרים.</span>
+            <span class="commission-note">${escapeHtml(worthinessText(deal))}</span>
             <span class="commission-note">ביטול: ${escapeHtml(deal.cancellationPolicy.summary || 'תנאי מלחמה, חירום והחזר נקבעים אצל הספק או פוליסת הביטוח לפני ההזמנה.')}</span>
             <div class="package-warnings">
-              <p>רכיבים שצריך להשלים לחבילה: ${escapeHtml(missingText(deal.missingFields))}. ה-AI לא ממציא מלון, ביטוח, מזוודה או החזר.</p>
+              <p>מה שחזר מהספק: מחיר טיסה וקישור הזמנה. מה שעדיין דורש ספקים נוספים: ${escapeHtml(missingText(deal.missingFields))}. ה-AI לא ממציא מלון, ביטוח, מזוודה או החזר.</p>
             </div>
             <div class="deal-footer">
               <span class="price">${money(deal.price, deal.currency)}</span>
@@ -262,7 +292,7 @@
       }
 
       renderPackages(packages, request);
-      if (agentStatus) agentStatus.textContent = `נמצאו ${packages.length} רכיבי ספק אמיתיים`;
+      if (agentStatus) agentStatus.textContent = `נמצאו ${packages.length} טיסות אמיתיות מספק`;
       document.querySelector('#deals')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       empty('שגיאת חיבור ספק', error.message, 'המערכת לא מציגה דמו במקום נתונים אמיתיים.');
@@ -316,7 +346,7 @@
   empty(
     'מוכן לחיפוש',
     'בחר יעד או השאר יעד ריק כדי שהסוכן יחפש כמה יעדים משתלמים ולא יינעל על רומא בלבד.',
-    'יוצגו רק נתוני ספקים אמיתיים; חבילה לא מלאה תסומן כרכיבים להשלמה.'
+    'כרגע הספק המחובר מחזיר טיסות אמיתיות. מלונות, ביטוח וחבילות מלאות דורשים ספקים נוספים ויסומנו כחסרים.'
   );
   checkProviderStatus();
 })();
