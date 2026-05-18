@@ -113,6 +113,11 @@ function buildSupplierUrl(link, marker) {
   return `${base}${base.includes('?') ? '&' : '?'}marker=${encodeURIComponent(marker)}`;
 }
 
+function providerFlightSummary(destination) {
+  const name = NAMES[destination] || destination;
+  return `טיסה אמיתית מספק ל${name}. מה שחזר מהספק: מחיר טיסה וקישור הזמנה. מלון, מזוודה, ארוחות, ביטוח ותנאי החזר אינם מוצגים כמובטחים עד שיחובר ספק מתאים לכל רכיב.`;
+}
+
 function packageFromFlight(row, index, request, marker, origin, destination) {
   const price = Number(row.value || row.price || 0);
 
@@ -133,13 +138,19 @@ function packageFromFlight(row, index, request, marker, origin, destination) {
       returnAt: row.return_at || null,
       direct: row.direct ?? null
     },
-    baggage: { included: null },
-    meals: { breakfastIncluded: null },
+    baggage: { included: null, status: 'provider_required' },
+    meals: { breakfastIncluded: null, status: 'hotel_provider_required' },
     price,
     currency: String(request.currency || 'ILS').toUpperCase(),
     refundable: null,
     cancellationPolicy: {
-      summary: 'תנאי ביטול, מלחמה, החזר ושינוי נקבעים אצל הספק או לפי פוליסת ביטוח שתתווסף מספק מורשה.'
+      summary: 'לא הוחזרו תנאי החזר מלאים מהספק. ביטול מלחמה/חירום דורש תנאי ספק או פוליסת ביטוח מתאימה לפני ההזמנה.'
+    },
+    insurance: {
+      requested: request.insurance || {},
+      status: 'provider_required',
+      price: null,
+      note: 'מחיר ביטוח וכיסוי ביטול יתווספו רק אחרי חיבור ספק ביטוח מורשה.'
     },
     supplierName: 'Travelpayouts / Aviasales',
     supplierUrl: buildSupplierUrl(row.link, marker),
@@ -153,7 +164,7 @@ function packageFromFlight(row, index, request, marker, origin, destination) {
     completePackage: false,
     missing_data: true,
     missingFields: ['hotel', 'baggage', 'meals', 'refundable_terms', 'insurance_price'],
-    aiSummary: `טיסה אמיתית מספק ל${NAMES[destination] || destination}. זה בסיס לבניית חבילה, לא חבילה מלאה: צריך להשלים מלון, ארוחות, מזוודה, ביטוח ותנאי ביטול מספקים מחוברים.`
+    aiSummary: providerFlightSummary(destination)
   };
 }
 
@@ -301,11 +312,11 @@ module.exports = async function handler(req, res) {
     packages,
     providers,
     message: packages.length
-      ? 'Real provider flight results returned. Missing package parts are marked.'
-      : 'No real provider results were returned. No fake packages were created.',
+      ? 'חזרו תוצאות טיסה אמיתיות מספק. מלון, מזוודה, ארוחות, ביטוח ותנאי החזר מסומנים כמידע שדורש ספק נוסף.'
+      : 'לא חזרו תוצאות אמיתיות מספק. לא נוצרו חבילות דמו.',
     ai: {
       openai: { configured: Boolean(env('OPENAI_API_KEY')), used: false },
-      explanation: 'AI may rank and explain real provider data only. It must not invent hotel, baggage, meals, insurance, refund or availability.'
+      explanation: 'ה-AI מדרג ומסביר רק נתוני ספק אמיתיים. הוא לא ממציא מלון, מזוודה, ארוחות, ביטוח, החזר או זמינות.'
     }
   });
 };
