@@ -1,1 +1,0 @@
-{"name":"tripwise-ai","version":"0.2.0","private":true,"type":"commonjs","scripts":{"start":"node server.mjs"},"engines":{"node":"24.x"}}
